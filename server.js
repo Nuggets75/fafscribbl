@@ -9,7 +9,7 @@ const crypto = require('crypto');
 
 const ws = require('./lib/ws');
 const { Store } = require('./lib/store');
-const { RoomManager, sanitizeSettings, CANVAS_W, CANVAS_H, FACTION_TAGS, KIND_TAGS } = require('./lib/game');
+const { RoomManager, sanitizeSettings, CANVAS_W, CANVAS_H } = require('./lib/game');
 
 const PORT = Number(process.env.PORT || 8092);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -174,8 +174,8 @@ const server = http.createServer((req, res) => {
       canvas: { w: CANVAS_W, h: CANVAS_H },
       unitDb: UNIT_DB_URL,
       defaults: store.defaults(),
-      factionTags: FACTION_TAGS,
-      kindTags: KIND_TAGS,
+      filterGroups: store.filterGroups(),
+      tagCounts: store.tagCounts(),
       words: store.enabledWords().length
     });
   }
@@ -211,8 +211,8 @@ const server = http.createServer((req, res) => {
         words: store.db.words,
         defaults: store.defaults(),
         rooms: mgr.adminView(),
-        factionTags: FACTION_TAGS,
-        kindTags: KIND_TAGS
+        filterGroups: store.filterGroups(),
+        tagCounts: store.tagCounts()
       });
     }
     if (p === '/api/admin/words' && method === 'POST') {
@@ -313,9 +313,19 @@ const server = http.createServer((req, res) => {
       });
       return res.end(body);
     }
+    if (p === '/api/admin/filters' && method === 'POST') {
+      return readJSON(req, res, (b) => {
+        if (!Array.isArray(b.groups)) return sendJSON(res, 400, { error: 'Expected a list of groups' });
+        const groups = store.normalizeGroups(b.groups);
+        if (!groups.length) return sendJSON(res, 400, { error: 'At least one group is needed' });
+        store.db.filterGroups = groups;
+        store.save();
+        return sendJSON(res, 200, { filterGroups: groups });
+      });
+    }
     if (p === '/api/admin/defaults' && method === 'POST') {
       return readJSON(req, res, (b) => {
-        store.db.defaults = sanitizeSettings(b, store.db.defaults);
+        store.db.defaults = sanitizeSettings(b, store.db.defaults, store.filterGroups());
         store.save();
         return sendJSON(res, 200, { defaults: store.defaults() });
       });

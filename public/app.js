@@ -10,7 +10,7 @@
   var SIZES = [4, 8, 16, 30];
 
   var $ = function (id) { return document.getElementById(id); };
-  var cfg = { unitDb: 'https://faforever.github.io/etfreeman-db/#/', factionTags: [], kindTags: [], defaults: null };
+  var cfg = { unitDb: 'https://faforever.github.io/etfreeman-db/#/', filterGroups: [], tagCounts: {}, defaults: null };
   var sock = null, wantOpen = false, retry = 0, retryTimer = null;
   var me = null, S = null, offset = 0, leaving = false;
   var lobbyHidden = false, gameEndHidden = false, lastState = null;
@@ -58,7 +58,19 @@
   function clearOff() { octx.fillStyle = '#ffffff'; octx.fillRect(0, 0, LW, LH); }
   clearOff();
 
+  // Keep the board as large as the panel allows while holding the 900x560 ratio exactly.
+  function sizeCanvas() {
+    var area = $('canvasArea');
+    if (!area || !area.clientWidth) return;
+    var scale = Math.min(area.clientWidth / LW, area.clientHeight / LH);
+    if (!isFinite(scale) || scale <= 0) return;
+    var wrap = $('canvasWrap');
+    wrap.style.width = Math.floor(LW * scale) + 'px';
+    wrap.style.height = Math.floor(LH * scale) + 'px';
+  }
+
   function blit() {
+    sizeCanvas();
     var wrap = $('canvasWrap');
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
     var w = Math.max(1, Math.round(wrap.clientWidth * dpr));
@@ -310,6 +322,7 @@
       case 'state':
         offset = m.now - Date.now();
         S = m;
+        sizeCanvas();
         rebuild(m.canvas || []);
         renderChatAll(m.chat || []);
         renderAll();
@@ -322,6 +335,7 @@
       case 'settings':
         if (!S) return;
         S.settings = m.settings;
+        if (typeof m.poolSize === 'number') S.poolSize = m.poolSize;
         renderLobby(); renderHeader();
         break;
       case 'chat': addChat(m); break;
@@ -329,7 +343,7 @@
       case 'canvas': rebuild(m.ops || []); break;
       case 'mask': if (S) { S.mask = m.mask; renderHeader(); } break;
       case 'reveal': if (S) { S.word = m.word; S.mask = m.word; renderHeader(); } break;
-      case 'choices': showChoices(m.words, m.endsAt); break;
+      case 'choices': showChoices(m.words, m.hints); break;
       case 'turnend': showTurnEnd(m); break;
       case 'gameend': showGameEnd(m); break;
       case 'pong': offset = m.now - Date.now(); break;
@@ -410,26 +424,47 @@
   }
 
   /* --------- lobby overlay --------- */
-  var chipsBuilt = false;
+  var chipsSignature = '';
+  function groupDefs() { return (S && S.filterGroups) ? S.filterGroups : (cfg.filterGroups || []); }
+  function tagCounts() { return (S && S.tagCounts) ? S.tagCounts : (cfg.tagCounts || {}); }
+
+  // Chip rows come from the admin-defined groups. A tag with no enabled words behind it
+  // is not offered at all, so deleting every word of a kind removes its chip by itself.
+  function buildFilterGroups() {
+    var groups = groupDefs();
+    var counts = tagCounts();
+    var sig = JSON.stringify(groups) + '|' + JSON.stringify(counts);
+    if (sig === chipsSignature) return;
+    chipsSignature = sig;
+    var host = $('filterGroups');
+    host.innerHTML = '';
+    groups.forEach(function (g) {
+      var live = (g.tags || []).filter(function (t) { return (counts[t] || 0) > 0; });
+      if (!live.length) return;
+      var box = document.createElement('div');
+      box.className = 'fgroup';
+      var lab = document.createElement('label');
+      lab.innerHTML = esc(g.label) + ' <span class="hint">(none selected = all)</span>';
+      box.appendChild(lab);
+      var chips = document.createElement('div');
+      chips.className = 'chips';
+      live.forEach(function (t) {
+        var c = document.createElement('div');
+        c.className = 'chip';
+        c.dataset.tag = t;
+        c.dataset.group = g.id;
+        c.innerHTML = esc(t) + '<span class="n">' + counts[t] + '</span>';
+        c.title = counts[t] + ' words tagged ' + t;
+        c.onclick = function () { if (!isHost()) return; c.classList.toggle('on'); pushSettings(); };
+        chips.appendChild(c);
+      });
+      box.appendChild(chips);
+      host.appendChild(box);
+    });
+  }
+
   function buildChips() {
-    if (chipsBuilt) return;
-    chipsBuilt = true;
-    var f = $('factionChips'), k = $('kindChips');
-    f.innerHTML = ''; k.innerHTML = '';
-    cfg.factionTags.forEach(function (t) {
-      var c = document.createElement('div');
-      c.className = 'chip'; c.dataset.tag = t; c.dataset.kind = 'faction';
-      c.textContent = t;
-      c.onclick = function () { if (!isHost()) return; c.classList.toggle('on'); pushSettings(); };
-      f.appendChild(c);
-    });
-    cfg.kindTags.forEach(function (t) {
-      var c = document.createElement('div');
-      c.className = 'chip'; c.dataset.tag = t; c.dataset.kind = 'kind';
-      c.textContent = t;
-      c.onclick = function () { if (!isHost()) return; c.classList.toggle('on'); pushSettings(); };
-      k.appendChild(c);
-    });
+    if ($('setRounds').options.length) return;
     var r = $('setRounds');
     for (var i = 1; i <= 10; i++) r.add(new Option(i + (i === 1 ? ' round' : ' rounds'), i));
     var t = $('setTime');
@@ -443,6 +478,7 @@
   function renderLobby() {
     if (!S) return;
     buildChips();
+    buildFilterGroups();
     var s = S.settings;
     $('lobbyCode').textContent = S.code;
     $('inviteLink').value = location.origin + '/r/' + S.code;
@@ -454,12 +490,11 @@
     $('setPublic').value = s.isPublic ? '1' : '0';
     if (document.activeElement !== $('setCustom')) $('setCustom').value = s.customWords || '';
     $('setCustomOnly').checked = !!s.customWordsOnly;
-    Array.prototype.forEach.call(document.querySelectorAll('#factionChips .chip'), function (c) {
-      c.classList.toggle('on', (s.factions || []).indexOf(c.dataset.tag) !== -1);
+    var tf = s.tagFilters || {};
+    Array.prototype.forEach.call(document.querySelectorAll('#filterGroups .chip'), function (c) {
+      c.classList.toggle('on', (tf[c.dataset.group] || []).indexOf(c.dataset.tag) !== -1);
     });
-    Array.prototype.forEach.call(document.querySelectorAll('#kindChips .chip'), function (c) {
-      c.classList.toggle('on', (s.kinds || []).indexOf(c.dataset.tag) !== -1);
-    });
+    renderPoolInfo();
 
     var host = isHost();
     ['setRounds', 'setTime', 'setMax', 'setChoices', 'setHints', 'setPublic', 'setCustom', 'setCustomOnly'].forEach(function (id) {
@@ -469,8 +504,10 @@
       ? 'You are the host. Settings apply to the next game.'
       : 'Only the host can change the settings.';
     var enough = (S.players || []).filter(function (p) { return p.connected; }).length >= 2;
-    $('startBtn').disabled = !host || !enough;
-    $('startBtn').textContent = !enough ? 'Waiting for at least 2 players' : (host ? 'Start the game' : 'Waiting for the host');
+    var empty = S.poolSize === 0;
+    $('startBtn').disabled = !host || !enough || empty;
+    $('startBtn').textContent = !enough ? 'Waiting for at least 2 players'
+      : (empty ? 'No words match these filters' : (host ? 'Start the game' : 'Waiting for the host'));
 
     var lp = $('lobbyPlayers');
     lp.innerHTML = '';
@@ -483,10 +520,24 @@
     });
   }
 
+  function renderPoolInfo() {
+    if (!S || typeof S.poolSize !== 'number') { $('poolInfo').textContent = ''; return; }
+    var n = S.poolSize;
+    var filtered = !!document.querySelector('#filterGroups .chip.on');
+    $('poolInfo').classList.toggle('empty', n === 0);
+    if (n === 0) {
+      $('poolInfo').innerHTML = '<b>0</b> words match these filters, deselect something';
+    } else {
+      $('poolInfo').innerHTML = '<b>' + n + '</b> word' + (n === 1 ? '' : 's') +
+        (filtered ? ' in this selection' : ' in the pool, everything is in play');
+    }
+  }
+
   function collectSettings() {
-    var facs = [], kinds = [];
-    Array.prototype.forEach.call(document.querySelectorAll('#factionChips .chip.on'), function (c) { facs.push(c.dataset.tag); });
-    Array.prototype.forEach.call(document.querySelectorAll('#kindChips .chip.on'), function (c) { kinds.push(c.dataset.tag); });
+    var tagFilters = {};
+    Array.prototype.forEach.call(document.querySelectorAll('#filterGroups .chip.on'), function (c) {
+      (tagFilters[c.dataset.group] = tagFilters[c.dataset.group] || []).push(c.dataset.tag);
+    });
     var hints = Number($('setHints').value);
     return {
       rounds: Number($('setRounds').value),
@@ -498,8 +549,7 @@
       isPublic: $('setPublic').value === '1',
       customWords: $('setCustom').value,
       customWordsOnly: $('setCustomOnly').checked,
-      factions: facs,
-      kinds: kinds
+      tagFilters: tagFilters
     };
   }
   function pushSettings() { if (isHost()) send({ t: 'settings', settings: collectSettings() }); }
@@ -517,11 +567,33 @@
     else prompt('Copy this link', text);
   }
   $('skipBtn').onclick = function () { send({ t: 'skip' }); };
+
+  /* --------- display settings --------- */
+  function applyScale(pct) {
+    var v = Math.max(70, Math.min(160, Math.round(pct / 5) * 5));
+    document.documentElement.style.setProperty('--ui', String(v / 100));
+    $('uiScale').value = String(v);
+    $('uiScaleVal').textContent = v + '%';
+    ls('fs_ui', String(v));
+    setTimeout(function () { sizeCanvas(); blit(); }, 0);
+  }
+  applyScale(Number(ls('fs_ui')) || 100);
+  $('uiScale').addEventListener('input', function () { applyScale(Number($('uiScale').value)); });
+  $('uiReset').onclick = function () { applyScale(100); };
+  $('uiBtn').onclick = function (e) {
+    e.stopPropagation();
+    $('uiPanel').classList.toggle('hide');
+  };
+  $('uiClose').onclick = function () { $('uiPanel').classList.add('hide'); };
+  $('uiPanel').addEventListener('click', function (e) { e.stopPropagation(); });
+  document.addEventListener('click', function () { $('uiPanel').classList.add('hide'); });
   $('settingsBtn').onclick = function () { lobbyHidden = false; renderOverlays(); renderLobby(); };
   $('closeLobby').onclick = function () { lobbyHidden = true; renderOverlays(); };
   $('closeGameEnd').onclick = function () { gameEndHidden = true; renderOverlays(); };
   document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape' || !S) return;
+    if (e.key !== 'Escape') return;
+    if (!$('uiPanel').classList.contains('hide')) { $('uiPanel').classList.add('hide'); return; }
+    if (!S) return;
     if (e.target && /input|textarea/i.test(e.target.tagName)) return;
     if (S.state === 'lobby' && !lobbyHidden) { lobbyHidden = true; renderOverlays(); }
     else if (S.state === 'gameend' && !gameEndHidden) { gameEndHidden = true; renderOverlays(); }
@@ -541,12 +613,12 @@
     }
     $('settingsBtn').classList.toggle('hide', S.state !== 'lobby');
     $('ovLobby').classList.toggle('hide', S.state !== 'lobby' || lobbyHidden);
-    if (S.state !== 'choosing') $('ovChoose').classList.add('hide');
+    if (S.state !== 'choosing') hideChoices();
     if (S.state !== 'turnend') $('ovTurnEnd').classList.add('hide');
     if (S.state !== 'gameend') $('ovGameEnd').classList.add('hide');
     else $('ovGameEnd').classList.toggle('hide', gameEndHidden);
     if (S.state === 'choosing') {
-      if (isDrawer() && S.choosing) showChoices(S.choosing, S.endsAt);
+      if (isDrawer() && S.choosing) showChoices(S.choosing, S.choosingHints);
       else showWaitingChoice();
     }
   }
@@ -554,15 +626,28 @@
     var d = (S.players || []).filter(function (p) { return p.id === S.drawerId; })[0];
     return d ? d.name : 'Someone';
   }
-  function showChoices(list, endsAt) {
+  function hideChoices() {
+    $('ovChoose').classList.add('hide');
+    $('chooseList').innerHTML = '';
+  }
+  function showChoices(list, hints) {
     $('chooseTitle').textContent = 'Choose a unit to draw';
-    $('chooseSub').textContent = 'Everyone else is waiting.';
+    $('chooseSub').textContent = 'Only you see these. Nobody else sees what the units are.';
     var box = $('chooseList');
     box.innerHTML = '';
     (list || []).forEach(function (w, i) {
       var b = document.createElement('button');
-      b.textContent = w;
-      b.onclick = function () { send({ t: 'pick', index: i }); $('ovChoose').classList.add('hide'); };
+      var name = document.createElement('span');
+      name.textContent = w;
+      b.appendChild(name);
+      var note = (hints || [])[i];
+      if (note) {
+        var n = document.createElement('span');
+        n.className = 'note';
+        n.textContent = note;
+        b.appendChild(n);
+      }
+      b.onclick = function () { send({ t: 'pick', index: i }); hideChoices(); };
       box.appendChild(b);
     });
     $('ovChoose').classList.remove('hide');
@@ -575,7 +660,7 @@
   }
   function showTurnEnd(m) {
     if (S) { S.state = 'turnend'; S.word = m.word; S.endsAt = m.endsAt; }
-    $('ovChoose').classList.add('hide');
+    hideChoices();
     $('revealWord').textContent = m.word;
     var box = $('turnResults');
     box.innerHTML = '';
@@ -592,7 +677,7 @@
   function showGameEnd(m) {
     gameEndHidden = false;
     if (S) { S.state = 'gameend'; S.endsAt = m.endsAt; }
-    $('ovChoose').classList.add('hide');
+    hideChoices();
     $('ovTurnEnd').classList.add('hide');
     var st = m.standings || [];
     var pod = $('podium');
@@ -671,6 +756,8 @@
   function loadConfig() {
     fetch('/api/config').then(function (r) { return r.json(); }).then(function (c) {
       cfg = c;
+      cfg.filterGroups = c.filterGroups || [];
+      cfg.tagCounts = c.tagCounts || {};
       $('dbLink').href = c.unitDb;
       $('dbLink2').href = c.unitDb;
       $('wordCount').textContent = c.words;

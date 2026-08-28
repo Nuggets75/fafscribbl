@@ -3,6 +3,7 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   var token = null, words = [], defaults = null, rooms = [], selected = {}, page = 1;
+  var groups = [], counts = {};
 
   function toast(t) {
     var d = document.createElement('div');
@@ -62,10 +63,11 @@
     t.onclick = function () {
       Array.prototype.forEach.call(document.querySelectorAll('.tab[data-tab]'), function (x) { x.classList.remove('on'); });
       t.classList.add('on');
-      ['words', 'defaults', 'rooms', 'io'].forEach(function (n) {
+      ['words', 'defaults', 'filters', 'rooms', 'io'].forEach(function (n) {
         $('tab-' + n).classList.toggle('hide', n !== t.dataset.tab);
       });
       if (t.dataset.tab === 'rooms') loadRooms();
+      if (t.dataset.tab === 'filters') renderGroups();
     };
   });
 
@@ -73,12 +75,14 @@
   function boot() {
     api('/api/admin/state').then(function (d) {
       words = d.words; defaults = d.defaults; rooms = d.rooms;
+      groups = d.filterGroups || []; counts = d.tagCounts || {};
       $('login').classList.add('hide');
       $('panel').classList.remove('hide');
       fillTagFilter();
       renderRows();
       fillDefaults();
       renderRooms();
+      renderGroups();
     }).catch(function (e) { $('loginErr').textContent = e.message; });
   }
 
@@ -350,9 +354,80 @@
     }).catch(function (e) { toast(e.message); });
   };
 
+  /* ------------------------------------------------------------- filters */
+  function renderGroups() {
+    var host = $('groupRows');
+    if (!host) return;
+    host.innerHTML = '';
+    groups.forEach(function (g, i) {
+      var row = document.createElement('div');
+      row.className = 'grow';
+      row.innerHTML =
+        '<div><label>Group name</label><input type="text" class="g-label" value="' + esc(g.label) + '"></div>' +
+        '<div><label>Tags, comma separated</label><input type="text" class="g-tags" value="' + esc((g.tags || []).join(', ')) + '"></div>' +
+        '<div><label>Always include tag</label><input type="text" class="g-always" value="' + esc(g.always || '') + '" placeholder="optional"></div>';
+      var rm = document.createElement('div');
+      var b = document.createElement('button');
+      b.className = 'small danger delbtn';
+      b.innerHTML = '&#10005;';
+      b.title = 'Remove this group';
+      b.onclick = function () { groups.splice(i, 1); renderGroups(); };
+      rm.appendChild(b);
+      row.appendChild(rm);
+      host.appendChild(row);
+    });
+    if (!groups.length) host.innerHTML = '<p class="hint">No groups. Hosts will see no filters at all.</p>';
+
+    var cloud = $('tagCloud');
+    cloud.innerHTML = '';
+    Object.keys(counts).sort().forEach(function (t) {
+      var c = document.createElement('div');
+      c.className = 'chip';
+      c.innerHTML = esc(t) + '<span class="n">' + counts[t] + '</span>';
+      c.title = 'Click to copy';
+      c.onclick = function () {
+        if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { toast('Copied "' + t + '"'); }, function () {});
+      };
+      cloud.appendChild(c);
+    });
+  }
+
+  function collectGroups() {
+    var out = [];
+    Array.prototype.forEach.call(document.querySelectorAll('#groupRows .grow'), function (row, i) {
+      var label = row.querySelector('.g-label').value.trim();
+      if (!label) return;
+      out.push({
+        id: (groups[i] && groups[i].id) || label.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        label: label,
+        tags: row.querySelector('.g-tags').value.split(',').map(function (x) { return x.trim().toLowerCase(); }).filter(Boolean),
+        always: row.querySelector('.g-always').value.trim().toLowerCase()
+      });
+    });
+    return out;
+  }
+
+  $('addGroup').onclick = function () {
+    groups = collectGroups();
+    groups.push({ id: '', label: 'New group', tags: [], always: '' });
+    renderGroups();
+  };
+  $('saveFilters').onclick = function () {
+    api('/api/admin/filters', { method: 'POST', body: JSON.stringify({ groups: collectGroups() }) })
+      .then(function (r) {
+        groups = r.filterGroups;
+        renderGroups();
+        $('filtersSaved').textContent = 'Saved';
+        setTimeout(function () { $('filtersSaved').textContent = ''; }, 1800);
+      }).catch(function (e) { toast(e.message); });
+  };
+
   /* ------------------------------------------------------------- rooms */
   function loadRooms() {
-    api('/api/admin/state').then(function (d) { rooms = d.rooms; renderRooms(); }).catch(function (e) { toast(e.message); });
+    api('/api/admin/state').then(function (d) {
+      rooms = d.rooms; counts = d.tagCounts || counts;
+      renderRooms();
+    }).catch(function (e) { toast(e.message); });
   }
   function renderRooms() {
     var tb = $('roomRows');

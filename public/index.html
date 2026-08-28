@@ -62,14 +62,25 @@
       <a class="codepill" id="dbLink2" href="https://faforever.github.io/etfreeman-db/#/" target="_blank" rel="noopener">Unit DB</a>
       <button class="small ghost hide" id="settingsBtn">Lobby settings</button>
       <button class="small ghost" id="skipBtn">Skip turn</button>
+      <button class="small ghost" id="uiBtn" title="Display settings">&#9881;</button>
       <button class="small ghost" id="leaveBtn">Leave</button>
     </div>
   </header>
+
+  <div id="uiPanel" class="hide">
+    <div class="uirow"><b>Display</b><button class="small ghost" id="uiClose">&#10005;</button></div>
+    <label for="uiScale">Interface size <span id="uiScaleVal">100%</span></label>
+    <input type="range" id="uiScale" min="70" max="160" step="5" value="100">
+    <p class="hint">Scales the player list, chat and toolbar. The drawing always fills the space
+    that is left.</p>
+    <button class="small ghost" id="uiReset">Reset to 100%</button>
+  </div>
 
   <main>
     <div class="panel"><div id="players"></div></div>
 
     <div class="panel" id="stage">
+      <div id="canvasArea">
       <div id="canvasWrap">
         <canvas id="board"></canvas>
 
@@ -91,6 +102,7 @@
           </div>
         </div>
 
+      </div>
       </div>
 
       <div id="tools" class="hide">
@@ -177,14 +189,8 @@
               <option value="1">Public (listed on the front page)</option>
             </select>
           </div>
-          <div class="full">
-            <label>Factions in the word pool <span class="hint">(none selected = all)</span></label>
-            <div class="chips" id="factionChips"></div>
-          </div>
-          <div class="full">
-            <label>Unit types <span class="hint">(none selected = all)</span></label>
-            <div class="chips" id="kindChips"></div>
-          </div>
+          <div class="full" id="filterGroups"></div>
+          <div class="full poolinfo" id="poolInfo"></div>
           <div class="full">
             <label for="setCustom">Extra words for this lobby <span class="hint">(one per line or comma separated)</span></label>
             <textarea id="setCustom" rows="2" placeholder="Optional"></textarea>

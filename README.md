@@ -36,25 +36,35 @@ The container clones the repo and runs `server.js` directly, the same way faf-to
 | Word choices | 1 (assigned, no picking) to 5 | 3 |
 | Letter hints | off, or 1-5 letters | 2 |
 | Visibility | private / public | private |
-| Faction filter | uef, cybran, aeon, seraphim, nomads | all |
-| Unit type filter | land, air, naval, structure, experimental | all |
+| Word pool filters | one chip row per admin-defined tag group | all |
 | Extra words | free text, optionally used on their own | empty |
 
 With **draw time off** a turn only ends when everybody has guessed, or when the drawer (or the
 host) presses **Skip turn**. Scoring falls back to guess order instead of the clock.
 
-Selecting nothing in a filter means everything. Selecting a filter that leaves no words falls
-back to the full list rather than breaking the game.
+Selecting nothing in a group means everything in that group. Tags are ORed inside a group and
+ANDed across groups, so `naval` + `uef` means UEF naval.
+
+The lobby shows a live count of how many words the current selection actually leaves, and Start
+is blocked with "No words match these filters" if that hits zero. No silent fallback.
+
+**A tag with no enabled words behind it is never offered.** Delete or disable every Nomads unit
+and the `nomads` chip disappears by itself; a whole group with nothing live in it is not drawn at
+all. Nothing to clean up by hand.
 
 The 20 faction-less words (mexes, pgens, radar, sonar, gateway, nuke, SMD, T1 PD and so on carry
 the `neutral` tag) are **always kept when a faction filter is on**, because they belong to every
 faction. Picking `uef` gives you UEF units plus those shared buildings, not a game without mexes.
+That is the Factions group's **always include** tag, and it is editable like everything else.
 
 ### A round
 1. A round is one full pass: every player draws once, in a shuffled order. `rounds` full passes,
    then the final scoreboard.
 2. The drawer gets N word choices and a 20 second pick timer. On timeout one is picked for them.
-   With `wordChoices = 1` this step is skipped entirely.
+   With `wordChoices = 1` this step is skipped entirely. Each choice carries the admin note under
+   it ("T3 UEF assault bot"), so the drawer does not have to look the unit up. This is the only
+   place a player ever sees a note, it goes to the drawer alone, and it disappears the moment the
+   choice is made.
 3. Everyone else sees the word as underscores, with the length and the spaces visible. Letters
    are revealed one at a time as the clock runs down, up to the hint count. Hints never uncover
    more than 60% of the word.
@@ -93,10 +103,27 @@ faction. Picking `uef` gives you UEF units plus those shared buildings, not a ga
 - Strokes stream live over the WebSocket, batched every 50 ms.
 - The canvas is a fixed 900x560 logical surface, scaled to fit any screen. Everybody's canvas is
   identical regardless of window size or device pixel ratio.
+- The board grows to fill whatever space the window gives it, keeping the 900x560 ratio, so a
+  wide monitor gets a big canvas instead of a small one floating in the middle.
 - Anyone who joins mid-turn gets the full drawing replayed instantly.
 - Only the current drawer can draw. The server enforces it, the toolbar is simply hidden for
   everybody else.
 - Works with mouse, pen and touch.
+
+### The word pool counter
+
+While setting up a lobby the host sees how many words the current filters leave, updating live as
+chips are toggled. Each chip carries its own word count too. With nothing selected it reads
+"242 words in the pool, everything is in play".
+
+### Display settings
+
+The gear in the header opens a small panel with an **Interface size** slider, 70% to 160%. It
+scales the player list, chat, header and toolbar, and the drawing takes whatever is left over.
+The choice is per browser, remembered in `localStorage`, and affects nobody else in the lobby.
+
+The header sits above the lobby and scoreboard panels, so Leave, the Unit DB link and the gear
+stay reachable while one of those is open.
 
 ### Chat
 - Wrong guesses are visible to everyone.
@@ -111,15 +138,21 @@ Wrong passwords are rate limited per IP.
 
 - **Words**: the full editable list. Every field edits in place and saves on blur.
   - *Word* - what the drawer sees and what has to be typed.
-  - *Note (admin only)* - what the unit actually is, e.g. "T3 UEF assault bot". **This is never
-    sent to players**, not while guessing and not on the reveal screen. It only exists so the
-    list is manageable.
+  - *Note (admin only)* - what the unit actually is, e.g. "T3 UEF assault bot". Guessers never
+    see it, and it is not on the reveal screen either. The only exception is the drawer's own
+    pick screen, where it is shown under each choice so they know what they are being asked to
+    draw.
   - *Also accepted* - alternative spellings that count as correct.
   - *Tags* - drive the lobby faction and type filters.
   - *On* - disabled words stay in the list but never come up in a game.
   - Search across every field, filter by enabled/disabled or by tag, 50/100/all per page.
   - Multi-select for bulk enable, disable, delete, add tag and remove tag.
 - **Lobby defaults**: the settings every newly created lobby starts with.
+- **Lobby filters**: the chip rows hosts see. Each group has a name, a comma separated tag list
+  and an optional *always include* tag whose words bypass that group. Add or remove groups
+  freely: tag some words `map` and add a group called Maps with the tag `map`, and hosts can
+  filter to maps only. Below the editor is every tag currently in use with its word count, so
+  you can see what is available to build a group from.
 - **Live lobbies**: every lobby on the server, who is in it, what is being drawn right now, and
   a button to close one.
 - **Import / export**: import plain lines or a JSON export, merging (duplicates skipped) or
@@ -249,7 +282,8 @@ npm test           # end to end suite, needs node 22+ for the WebSocket client
 The test suite starts a real server on a random port and drives it over real WebSockets:
 HTTP routes, the admin API, the whole game flow, the word list collapse rules, hints, close
 guesses, chat visibility, drawing permissions, reconnection, kicking, host handover, filters and
-custom words, and that abandoned lobbies close themselves. 104 assertions.
+custom words, self-closing lobbies, the editable filter groups and the pool counter.
+121 assertions.
 
 To catch undefined identifiers, which `node --check` cannot:
 

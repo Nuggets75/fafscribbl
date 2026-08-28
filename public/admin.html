@@ -28,6 +28,13 @@
   .onbtn{background:#1c3a24;color:var(--good);border:1px solid #2d5b38}
   .onbtn:hover{filter:brightness(1.3)}
   .onbtn.off{background:#262d38;color:var(--dim);border:1px solid var(--line)}
+  .grow{display:grid;grid-template-columns:170px 1fr 150px 40px;gap:8px;align-items:end;margin-bottom:10px}
+  @media(max-width:760px){.grow{grid-template-columns:1fr}}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);
+    font-size:13px;cursor:pointer}
+  .chip:hover{border-color:var(--accent)}
+  .chip .n{opacity:.55;margin-left:5px}
   tr.saved{background:#16301c55}
   .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
   .bar input[type=text]{width:220px}
@@ -58,6 +65,7 @@
     <div class="tabs">
       <div class="tab on" data-tab="words">Words</div>
       <div class="tab" data-tab="defaults">Lobby defaults</div>
+      <div class="tab" data-tab="filters">Lobby filters</div>
       <div class="tab" data-tab="rooms">Live lobbies</div>
       <div class="tab" data-tab="io">Import / export</div>
       <div style="flex:1"></div>
@@ -135,6 +143,29 @@
         </div>
         <button class="primary" id="saveDefaults">Save defaults</button>
         <span class="stat" id="defSaved"></span>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------ filters -->
+    <section id="tab-filters" class="hide">
+      <div class="card">
+        <h3 style="margin:0 0 4px;font-size:16px">Filter chips in the lobby</h3>
+        <p class="hint">These are the chip rows a host sees when setting up a lobby. Tags with no
+        enabled words behind them are hidden from the lobby automatically, so deleting every unit
+        of a kind removes its chip without you touching anything here.<br>
+        <b>Always include</b> is optional: words carrying that tag ignore the group entirely.
+        The Factions group uses <span class="mono">neutral</span> so mexes and pgens stay in the
+        pool whichever faction you pick.</p>
+        <div id="groupRows"></div>
+        <div class="bar" style="margin-top:12px">
+          <button id="addGroup">Add a group</button>
+          <button class="primary" id="saveFilters">Save</button>
+          <span class="stat" id="filtersSaved"></span>
+        </div>
+        <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+        <p class="hint">Tags currently in use, click one to copy it. A tag not listed here has no
+        enabled words.</p>
+        <div class="chips" id="tagCloud"></div>
       </div>
     </section>
 

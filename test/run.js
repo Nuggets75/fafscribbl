@@ -262,6 +262,11 @@ async function gameTests() {
   const choices = await drawer.wait((m) => m.t === 'choices');
   eq(choices.words.length, 3, 'drawer got three word choices');
   eq(guessers[0].find((m) => m.t === 'choices'), null, 'guessers do not get the choices');
+  ok(Array.isArray(choices.hints) && choices.hints.length === 3 && choices.hints.every((h) => h && h.length > 2),
+    'the drawer is told what each unit is: ' + choices.hints[0]);
+  const gChoose = guessers[0].find((m) => m.t === 'state' && m.state === 'choosing');
+  eq(gChoose.choosing, null, 'guessers get no word list while the drawer picks');
+  eq(gChoose.choosingHints, null, 'and no notes either');
   const word = choices.words[0];
 
   drawer.send({ t: 'pick', index: 0 });
@@ -476,7 +481,7 @@ async function edgeTests() {
   q1.close(); q2.close();
 
   // faction filter
-  const f1 = await join('Fac', { create: true, settings: { factions: ['seraphim'], kinds: ['air'], wordChoices: 1, drawTime: 0, rounds: 1 } });
+  const f1 = await join('Fac', { create: true, settings: { tagFilters: { faction: ['seraphim'], kind: ['air'] }, wordChoices: 1, drawTime: 0, rounds: 1 } });
   const f2 = await join('Fac2', { code: f1.code });
   await sleep(150);
   f1.send({ t: 'start' });
@@ -536,7 +541,7 @@ async function extraTests() {
   await sleep(200);
 
   // a faction filter keeps the faction-less words and nothing from other factions
-  const ff1 = await join('Filt', { create: true, settings: { factions: ['uef'], wordChoices: 5, drawTime: 0, rounds: 1 } });
+  const ff1 = await join('Filt', { create: true, settings: { tagFilters: { faction: ['uef'] }, wordChoices: 5, drawTime: 0, rounds: 1 } });
   const ff2 = await join('Filt2', { code: ff1.code });
   await sleep(150);
   ff1.send({ t: 'start' });
@@ -580,6 +585,62 @@ async function extraTests() {
   await sleep(3500);
   ok(!(await api('/api/admin/state', {}, adminToken)).body.rooms.some((r) => r.code === midCode),
     'a lobby abandoned mid game drops itself too');
+
+  // the lobby reports how big the pool is, and reacts to the filters
+  const pc1 = await join('Pool', { create: true });
+  const pc2 = await join('Pool2', { code: pc1.code });
+  await sleep(200);
+  const total = (await api('/api/config')).body.words;
+  eq(pc1.state().poolSize, total, 'an unfiltered lobby reports the whole word list');
+  ok(Array.isArray(pc1.state().filterGroups) && pc1.state().filterGroups.length >= 2, 'the lobby is told what the filter groups are');
+  ok(pc1.state().tagCounts && pc1.state().tagCounts.uef > 0, 'and how many words each tag has');
+  pc1.clear();
+  pc1.send({ t: 'settings', settings: { tagFilters: { kind: ['naval'] } } });
+  const sm = await pc1.wait((m) => m.t === 'settings', 3000);
+  ok(sm.poolSize > 0 && sm.poolSize < total, 'filtering shrinks the reported pool: ' + sm.poolSize + ' of ' + total);
+  const navalWords = (await api('/api/admin/state', {}, adminToken)).body.words
+    .filter((w) => w.enabled && w.tags.indexOf('naval') !== -1).length;
+  eq(sm.poolSize, navalWords, 'the reported count matches the word list exactly');
+  pc1.clear();
+  pc1.send({ t: 'settings', settings: { tagFilters: {} } });
+  const sm2 = await pc1.wait((m) => m.t === 'settings', 3000);
+  eq(sm2.poolSize, total, 'clearing the filters restores the full pool');
+  pc1.close(); pc2.close();
+  await sleep(200);
+
+  // filter groups are admin editable, and an empty tag disappears from the lobby
+  const before = (await api('/api/admin/state', {}, adminToken)).body.filterGroups;
+  ok(before.some((g) => g.id === 'faction' && g.tags.indexOf('nomads') !== -1), 'the shipped groups are returned to the admin');
+  const saved = await api('/api/admin/filters', {
+    method: 'POST',
+    body: JSON.stringify({
+      groups: [
+        { id: 'faction', label: 'Factions', tags: ['uef', 'cybran', 'aeon', 'seraphim'], always: 'neutral' },
+        { id: 'kind', label: 'Unit types', tags: ['land', 'air', 'naval', 'structure', 'experimental'], always: '' },
+        { id: 'extra', label: 'Extras', tags: ['map'], always: '' }
+      ]
+    })
+  }, adminToken);
+  eq(saved.status, 200, 'filter groups saved');
+  eq(saved.body.filterGroups.length, 3, 'a third group can be added');
+  const cfg2 = (await api('/api/config')).body;
+  ok(cfg2.filterGroups.some((g) => g.id === 'extra' && g.tags.indexOf('map') !== -1), 'the new group reaches the lobby config');
+  ok(!cfg2.filterGroups.some((g) => g.tags.indexOf('nomads') !== -1), 'a removed tag is gone from the groups');
+  ok(cfg2.tagCounts && cfg2.tagCounts.map === undefined, 'a tag with no words has no count, so no chip is drawn');
+
+  // a filter that matches nothing must be honest about it rather than silently using everything
+  const z1 = await join('Zero', { create: true, settings: { tagFilters: { extra: ['map'] } } });
+  const z2 = await join('Zero2', { code: z1.code });
+  await sleep(200);
+  eq(z1.state().poolSize, 0, 'a filter matching no words reports zero');
+  z1.send({ t: 'start' });
+  await sleep(400);
+  eq(z1.state().state, 'lobby', 'and the game refuses to start');
+  z1.close(); z2.close();
+  await sleep(200);
+
+  // restore the shipped groups for the rest of the run
+  await api('/api/admin/filters', { method: 'POST', body: JSON.stringify({ groups: before }) }, adminToken);
 
   // host leaving hands the crown over
   const o1 = await join('Owner', { create: true });
