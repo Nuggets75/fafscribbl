@@ -145,7 +145,7 @@ function parseImport(text) {
       enabled: w.enabled !== false
     })).filter((w) => w.word);
   }
-  // plain lines:  Word | hint | alias, alias | tag tag
+  // plain lines:  Word | hint | alias, alias | tag, tag   (commas only, so a tag may contain spaces)
   return trimmed.split(/\r?\n/).map((line) => {
     const parts = line.split('|').map((s) => s.trim());
     if (!parts[0]) return null;
@@ -153,7 +153,7 @@ function parseImport(text) {
       word: parts[0],
       hint: parts[1] || '',
       aliases: parts[2] ? parts[2].split(',').map((s) => s.trim()).filter(Boolean) : [],
-      tags: parts[3] ? parts[3].split(/[\s,]+/).map((s) => s.trim().toLowerCase()).filter(Boolean) : [],
+      tags: parts[3] ? parts[3].split(',').map((s) => s.trim().toLowerCase()).filter(Boolean) : [],
       enabled: true
     };
   }).filter(Boolean);

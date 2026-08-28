@@ -172,8 +172,17 @@ Wrong passwords are rate limited per IP.
 Import line format, everything after the word optional:
 
 ```
-Percival | T3 UEF assault bot | Perci, Percy | uef land t3
+Percival | T3 UEF assault bot | Perci, Percy | uef, land, t3
 ```
+
+Aliases and tags are separated by **commas only**, never by spaces, so a tag can contain spaces:
+
+```
+Setons Clutch | 20x20 | Setons | map, easy maps
+```
+
+gives one word with two tags, `map` and `easy maps`. The same is true of the tag boxes in the
+words table and the add-a-word form.
 
 ---
 
@@ -290,8 +299,8 @@ npm test           # end to end suite, needs node 22+ for the WebSocket client
 The test suite starts a real server on a random port and drives it over real WebSockets:
 HTTP routes, the admin API, the whole game flow, the word list collapse rules, hints, close
 guesses, chat visibility, drawing permissions, reconnection, kicking, host handover, filters and
-custom words, self-closing lobbies, the editable filter groups and the pool counter.
-121 assertions.
+custom words, self-closing lobbies, the editable filter groups, the pool counter and tags that
+contain spaces. 128 assertions.
 
 To catch undefined identifiers, which `node --check` cannot:
 

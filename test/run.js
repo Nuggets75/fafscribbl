@@ -177,10 +177,48 @@ async function adminTests() {
 
   const imp = await api('/api/admin/words/import', {
     method: 'POST',
-    body: JSON.stringify({ text: 'Imported One | a note | alt one | test import\nImported Two\nPercival', mode: 'merge' })
+    body: JSON.stringify({ text: 'Imported One | a note | alt one | test, import\nImported Two\nPercival', mode: 'merge' })
   }, adminToken);
   eq(imp.body.added, 2, 'import added the new lines');
   eq(imp.body.skipped, 1, 'import skipped the duplicate');
+
+  // tags are comma separated, so a tag is allowed to contain spaces
+  const spaced = await api('/api/admin/words/import', {
+    method: 'POST',
+    body: JSON.stringify({ text: 'Seton\u2019s Clutch | 20x20 | Setons | map, easy maps\nTheta Passage | 5x5 | | map, easy maps', mode: 'merge' })
+  }, adminToken);
+  eq(spaced.body.added, 2, 'a spaced tag imports without splitting');
+  const withSpace = (await api('/api/admin/state', {}, adminToken)).body.words
+    .filter((w) => w.tags.indexOf('easy maps') !== -1);
+  eq(withSpace.length, 2, '"easy maps" survives as one tag');
+  ok(withSpace[0].tags.indexOf('easy') === -1 && withSpace[0].tags.indexOf('maps') === -1,
+    'and was not chopped into "easy" and "maps"');
+  eq((await api('/api/admin/state', {}, adminToken)).body.tagCounts['easy maps'], 2,
+    'the tag count keys on the whole tag');
+
+  // and it works as a lobby filter end to end
+  const groupsBefore = (await api('/api/admin/state', {}, adminToken)).body.filterGroups;
+  await api('/api/admin/filters', {
+    method: 'POST',
+    body: JSON.stringify({ groups: groupsBefore.concat([{ id: 'maps', label: 'Maps', tags: ['easy maps'], always: '' }]) })
+  }, adminToken);
+  const sp1 = await join('Spaced', { create: true, settings: { tagFilters: { maps: ['easy maps'] }, wordChoices: 1, drawTime: 0, rounds: 1 } });
+  const sp2 = await join('Spaced2', { code: sp1.code });
+  await sleep(200);
+  eq(sp1.state().poolSize, 2, 'a spaced tag filters the pool correctly');
+  ok((sp1.state().tagCounts || {})['easy maps'] === 2, 'the lobby is told the spaced tag count');
+  sp1.send({ t: 'start' });
+  const spSt = await sp1.wait((m) => m.t === 'state' && m.state === 'drawing', 6000);
+  const spDrawer = spSt.drawerId === sp1.id ? sp1 : sp2;
+  const spWord = spDrawer.find((m) => m.t === 'state' && m.state === 'drawing').word;
+  ok(/Clutch|Theta/.test(spWord), 'and a game started on that filter picks one of them: ' + spWord);
+  sp1.close(); sp2.close();
+  await sleep(200);
+  await api('/api/admin/words', {
+    method: 'DELETE',
+    body: JSON.stringify({ ids: withSpace.map((w) => w.id) })
+  }, adminToken);
+  await api('/api/admin/filters', { method: 'POST', body: JSON.stringify({ groups: groupsBefore }) }, adminToken);
 
   const del = await api('/api/admin/words', { method: 'DELETE', body: JSON.stringify({ ids: [id] }) }, adminToken);
   eq(del.body.removed, 1, 'word deleted');

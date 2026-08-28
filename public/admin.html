@@ -81,7 +81,7 @@
           <input type="text" id="newWord" placeholder="Word, e.g. Percival">
           <input type="text" id="newHint" placeholder="Bracket note, e.g. T3 UEF assault bot" style="width:280px">
           <input type="text" id="newAliases" placeholder="Also accepted, comma separated" style="width:230px">
-          <input type="text" id="newTags" placeholder="tags: uef land t3" style="width:180px">
+          <input type="text" id="newTags" placeholder="tags: uef, land, t3" style="width:180px">
           <button class="primary" id="addBtn">Add</button>
         </div>
         <p class="hint">The bracket note is only ever shown here in the admin list and on the reveal screen after a turn. Players never see it while guessing.</p>
@@ -183,8 +183,11 @@
       <div class="grid2">
         <div class="card">
           <h3 style="margin:0 0 4px;font-size:16px">Import</h3>
-          <p class="hint">One word per line: <span class="mono">Word | note | alias, alias | tags</span><br>
-          Everything after the word is optional. A full JSON export also works.</p>
+          <p class="hint">One word per line:
+          <span class="mono">Word | note | alias, alias | tag, tag</span><br>
+          Everything after the word is optional. Aliases and tags are separated by commas only,
+          so a tag can contain spaces: <span class="mono">easy maps</span> is one tag.
+          A full JSON export also works.</p>
           <textarea id="importText" placeholder="Percival | T3 UEF assault bot | Perci | uef land t3"></textarea>
           <div class="bar" style="margin-top:10px">
             <select id="importMode">

@@ -67,7 +67,7 @@
         $('tab-' + n).classList.toggle('hide', n !== t.dataset.tab);
       });
       if (t.dataset.tab === 'rooms') loadRooms();
-      if (t.dataset.tab === 'filters') renderGroups();
+      if (t.dataset.tab === 'filters') refreshCounts();
     };
   });
 
@@ -278,7 +278,10 @@
     if (!ids.length) return toast('Nothing selected');
     api('/api/admin/words/bulk', { method: 'POST', body: JSON.stringify({ ids: ids, action: action, tag: tag }) })
       .then(function () { return api('/api/admin/state'); })
-      .then(function (d) { words = d.words; fillTagFilter(); renderRows(); toast('Done'); })
+      .then(function (d) {
+        words = d.words; counts = d.tagCounts || counts;
+        fillTagFilter(); renderRows(); renderGroups(); toast('Done');
+      })
       .catch(function (e) { toast(e.message); });
   }
   $('bulkOn').onclick = function () { bulk('enable'); };
@@ -307,7 +310,7 @@
         word: w,
         hint: $('newHint').value.trim(),
         aliases: $('newAliases').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean),
-        tags: $('newTags').value.split(/[\s,]+/).map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean),
+        tags: $('newTags').value.split(',').map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean),
         enabled: true
       })
     }).then(function (r) {
@@ -355,6 +358,16 @@
   };
 
   /* ------------------------------------------------------------- filters */
+  // Counts drift as soon as a word is added, tagged or disabled, so pull them fresh
+  // whenever the tab is opened rather than trusting whatever boot left behind.
+  function refreshCounts() {
+    return api('/api/admin/state').then(function (d) {
+      counts = d.tagCounts || {};
+      groups = d.filterGroups || groups;
+      renderGroups();
+    }).catch(function (e) { toast(e.message); renderGroups(); });
+  }
+
   function renderGroups() {
     var host = $('groupRows');
     if (!host) return;
@@ -465,7 +478,10 @@
         $('importStat').textContent = r.replaced ? ('Replaced with ' + r.added + ' words') : (r.added + ' added, ' + r.skipped + ' duplicates skipped');
         return api('/api/admin/state');
       })
-      .then(function (d) { words = d.words; fillTagFilter(); renderRows(); })
+      .then(function (d) {
+        words = d.words; counts = d.tagCounts || counts;
+        fillTagFilter(); renderRows(); renderGroups();
+      })
       .catch(function (e) { toast(e.message); });
   };
   $('exportBtn').onclick = function () {
