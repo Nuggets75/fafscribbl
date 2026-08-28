@@ -48,13 +48,22 @@
       </p>
     </div>
 
+    <div class="homeside">
     <div class="card">
       <h3 style="margin:0 0 6px;font-size:16px">Open lobbies</h3>
       <p class="hint" style="margin:0">Public lobbies anyone can join.</p>
       <div id="publicRooms"><p class="hint">Nothing open right now. Create one.</p></div>
       <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
-      <p class="hint" style="margin:0"><span id="wordCount">0</span> unit names in the pool.</p>
+      <p class="hint" style="margin:0"><span id="wordCount">0</span> faf related words in the pool.</p>
       <p class="hint"><a href="/admin">Admin</a></p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:16px">Single player challenge</h3>
+      <p class="hint" style="margin:0 0 10px">Ten drawings other players made, on the clock. Guess them fast for points and a spot on the global highscore.</p>
+      <a class="btn-link" id="soloBtn" href="/solo">Play the challenge</a>
+      <p class="hint" style="margin-top:10px" id="soloInfo"></p>
+    </div>
     </div>
   </div>
 </div>
@@ -73,6 +82,7 @@
     <div class="hdr-right">
       <div class="codepill" id="codePill" title="Copy the invite link">Lobby <b id="codeText">-----</b></div>
       <a class="codepill" id="dbLink2" href="https://faforever.github.io/etfreeman-db/#/" target="_blank" rel="noopener">Unit DB</a>
+      <button class="small ghost" id="pauseBtn">Pause</button>
       <button class="small ghost" id="skipBtn">Skip turn</button>
       <button class="small ghost" id="sndBtn" title="Sound">&#128266;</button>
       <button class="small ghost" id="uiBtn" title="Display settings">&#9881;</button>
@@ -207,6 +217,17 @@
       <div id="canvasArea">
       <div id="canvasWrap">
         <canvas id="board"></canvas>
+
+        <!-- paused by the host -->
+        <div class="ov hide" id="ovPaused">
+          <div class="ovbox">
+            <h2>Paused</h2>
+            <p class="muted" id="pausedBy">The host paused the game.</p>
+            <p class="hint">The clock is stopped. Drawing, guessing and chat are on hold until the
+              host starts it again. Nobody loses any time.</p>
+            <button class="primary hide" id="resumeBtn">Resume the game</button>
+          </div>
+        </div>
 
         <!-- word choice -->
         <div class="ov hide" id="ovChoose">

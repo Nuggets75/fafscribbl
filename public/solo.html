@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>fafscribbl - single player challenge</title>
+<link rel="icon" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div id="solo">
+  <div class="solowrap">
+
+    <div class="solohead">
+      <div><a href="/" style="text-decoration:none;color:inherit"><div class="brand">faf<span>scribbl</span></div></a>
+        <div class="hint">Single player challenge</div></div>
+      <div class="soloscore hide" id="hud">
+        <div><span class="lab">Drawing</span><b id="hudRound">1/10</b></div>
+        <div><span class="lab">Score</span><b id="hudScore">0</b></div>
+        <div id="soloClock">40</div>
+        <button class="small ghost" id="quitBtn">Give up</button>
+      </div>
+      <div id="headRight"><a href="/" class="hint">Back to the lobbies</a></div>
+    </div>
+
+    <!-- ---------------- start ---------------- -->
+    <div id="soloStart">
+      <div class="card">
+        <h2 style="margin:0 0 6px">Ten drawings. Forty seconds each.</h2>
+        <p class="hint" style="margin:0 0 14px">
+          Every drawing here was made by a real player in a lobby. Each one replays stroke by stroke,
+          and the sooner you name it the more points you get, exactly like a normal round.
+          Letters appear at the halfway mark and again near the end.
+        </p>
+        <div class="field" style="max-width:320px">
+          <label for="soloName">Your name (for the highscore)</label>
+          <input id="soloName" maxlength="18" placeholder="Commander" autocomplete="off">
+        </div>
+        <button class="primary" id="startBtn">Start the challenge</button>
+        <div class="err" id="startErr"></div>
+        <p class="hint" style="margin-top:12px"><span id="poolCount">0</span> drawings saved so far.</p>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h3 style="margin:0 0 8px;font-size:16px">Global highscore</h3>
+        <table class="scoretable">
+          <thead><tr><th class="r">#</th><th>Name</th><th class="r">Got</th><th class="r">Score</th><th class="r">When</th></tr></thead>
+          <tbody id="hsBody"></tbody></table>
+        <p class="hint" id="hsEmpty">Nobody has finished a run yet. Be first.</p>
+      </div>
+    </div>
+
+    <!-- ---------------- play ---------------- -->
+    <div id="soloPlay" class="hide">
+      <div class="soloboard">
+        <canvas id="soloCanvas" width="900" height="560"></canvas>
+        <div class="soloflash hide" id="flash">
+          <h2 id="flashWord"></h2>
+          <img id="flashIcon" class="hide" alt="">
+          <div class="pts" id="flashPts"></div>
+        </div>
+      </div>
+      <div class="solomask" id="soloMask"></div>
+      <form class="sologuess" id="guessForm" autocomplete="off">
+        <input id="guessInput" maxlength="60" placeholder="What is it?" autocomplete="off">
+        <button class="primary" type="submit">Guess</button>
+      </form>
+      <div class="soloverdict" id="verdict"></div>
+      <div class="soloprog" id="prog"></div>
+    </div>
+
+    <!-- ---------------- result ---------------- -->
+    <div id="soloDone" class="hide">
+      <div class="card">
+        <h2 style="margin:0 0 4px">Run finished</h2>
+        <p style="margin:0 0 6px;font-size:20px"><b id="finalScore">0</b> points<span id="finalRank" class="hint"></span></p>
+        <div class="recap" id="recap"></div>
+        <div style="margin-top:16px;display:flex;gap:10px">
+          <button class="primary" id="againBtn">Play again</button>
+          <a class="btn-link" href="/" style="background:var(--panel2);color:var(--text)">Back to the lobbies</a>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h3 style="margin:0 0 8px;font-size:16px">Global highscore</h3>
+        <table class="scoretable">
+          <thead><tr><th class="r">#</th><th>Name</th><th class="r">Got</th><th class="r">Score</th><th class="r">When</th></tr></thead>
+          <tbody id="hsBody2"></tbody></table>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="toastwrap" id="toasts"></div>
+<script src="/solo.js"></script>
+</body>
+</html>

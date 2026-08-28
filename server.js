@@ -9,6 +9,8 @@ const crypto = require('crypto');
 
 const ws = require('./lib/ws');
 const { Store } = require('./lib/store');
+const { Gallery, MAX_DRAWINGS } = require('./lib/gallery');
+const { Solo, ROUNDS } = require('./lib/solo');
 const { RoomManager, sanitizeSettings, CANVAS_W, CANVAS_H } = require('./lib/game');
 
 const PORT = Number(process.env.PORT || 8092);
@@ -31,13 +33,19 @@ if (!ADMIN_PASSWORD) {
 
 const store = new Store(DATA_DIR, SEED, ICON_MAP, ICON_BUNDLE);
 store.load();
-const mgr = new RoomManager(store);
+const gallery = new Gallery(DATA_DIR);
+gallery.load();
+const solo = new Solo(DATA_DIR, gallery);
+solo.load();
+const mgr = new RoomManager(store, gallery);
 console.log('[fafscribbl] data dir ' + DATA_DIR + ', ' + store.db.words.length + ' words (' +
-  store.enabledWords().length + ' enabled), ' + store.builtinIconNames().length + ' unit icons');
+  store.enabledWords().length + ' enabled), ' + store.builtinIconNames().length + ' unit icons, ' +
+  gallery.count() + ' saved drawings');
 
 // ---------------------------------------------------------------- admin auth
 const adminTokens = new Map(); // token -> expiry
 const loginHits = new Map();   // ip -> {n, until}
+const soloStarts = new Map();  // ip -> {n, until}
 const ADMIN_TTL = 12 * 60 * 60 * 1000;
 
 function sha(s) { return crypto.createHash('sha256').update(String(s)).digest(); }
@@ -68,6 +76,7 @@ setInterval(() => {
   const now = Date.now();
   for (const [t, exp] of adminTokens) if (exp < now) adminTokens.delete(t);
   for (const [ip, v] of loginHits) if (v.until < now) loginHits.delete(ip);
+  for (const [ip, v] of soloStarts) if (v.until < now) soloStarts.delete(ip);
 }, 60000).unref();
 
 // ---------------------------------------------------------------- http utils
@@ -180,12 +189,47 @@ const server = http.createServer((req, res) => {
       defaults: store.defaults(),
       filterGroups: store.filterGroups(),
       tagCounts: store.tagCounts(),
-      words: store.enabledWords().length
+      words: store.enabledWords().length,
+      drawings: gallery.count(),
+      soloRounds: ROUNDS
     });
   }
   if (p === '/api/rooms' && method === 'GET') {
     return sendJSON(res, 200, { rooms: mgr.publicRooms() });
   }
+  // ---- single player challenge
+  if (p.indexOf('/api/solo/') === 0) {
+    if (p === '/api/solo/highscores' && method === 'GET') {
+      return sendJSON(res, 200, { best: solo.top(20), drawings: gallery.count(), rounds: ROUNDS });
+    }
+    if (p === '/api/solo/start' && method === 'POST') {
+      const ip = ipOf(req);
+      const hit = soloStarts.get(ip);
+      if (hit && hit.n >= 20 && hit.until > Date.now()) return sendJSON(res, 429, { error: 'Too many runs, wait a few minutes' });
+      const cur = (hit && hit.until > Date.now()) ? hit : { n: 0, until: Date.now() + 10 * 60 * 1000 };
+      cur.n++;
+      soloStarts.set(ip, cur);
+      return readJSON(req, res, (b) => {
+        const s = solo.start(b.name);
+        if (!s) return sendJSON(res, 409, { error: 'There are not enough saved drawings yet. Play a few rounds first.' });
+        return sendJSON(res, 200, Object.assign({ sid: s.id }, solo.round(s)));
+      });
+    }
+    if (method !== 'POST') return sendJSON(res, 404, { error: 'Unknown endpoint' });
+    return readJSON(req, res, (b) => {
+      const s = solo.get(b.sid);
+      if (!s) return sendJSON(res, 404, { error: 'That run has expired, start a new one' });
+      if (p === '/api/solo/guess') return sendJSON(res, 200, solo.guess(s, b.guess));
+      if (p === '/api/solo/timeup') return sendJSON(res, 200, solo.timeUp(s));
+      // The next drawing's clock only starts when the browser asks for it, so the
+      // few seconds of "that was a Cybran Mantis" between rounds are not on the player.
+      if (p === '/api/solo/next') return sendJSON(res, 200, solo.round(s));
+      if (p === '/api/solo/hint') return sendJSON(res, 200, solo.hint(s));
+      if (p === '/api/solo/finish') return sendJSON(res, 200, solo.finish(s, b.name));
+      return sendJSON(res, 404, { error: 'Unknown endpoint' });
+    });
+  }
+
   if (p === '/api/health' && method === 'GET') {
     return sendJSON(res, 200, { ok: true, rooms: mgr.rooms.size, words: store.db.words.length, uptime: Math.round(process.uptime()) });
   }
@@ -218,6 +262,33 @@ const server = http.createServer((req, res) => {
         filterGroups: store.filterGroups(),
         tagCounts: store.tagCounts()
       });
+    }
+    if (p === '/api/admin/drawings' && method === 'GET') {
+      const limit = Math.min(120, Math.max(1, Number(url.searchParams.get('limit')) || 40));
+      const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0);
+      return sendJSON(res, 200, { total: gallery.count(), cap: MAX_DRAWINGS, drawings: gallery.recent(limit, offset) });
+    }
+    if (p === '/api/admin/drawings/one' && method === 'GET') {
+      const d = gallery.get(url.searchParams.get('id'));
+      if (!d) return sendJSON(res, 404, { error: 'No such drawing' });
+      return sendJSON(res, 200, { drawing: d });
+    }
+    if (p === '/api/admin/drawings' && method === 'DELETE') {
+      return readJSON(req, res, (b) => {
+        const ids = Array.isArray(b.ids) ? b.ids.map(String) : [];
+        let n = 0;
+        for (const id of ids) if (gallery.remove(id)) n++;
+        return sendJSON(res, 200, { removed: n, total: gallery.count() });
+      });
+    }
+    if (p === '/api/admin/drawings/clear' && method === 'POST') {
+      return sendJSON(res, 200, { removed: gallery.clear() });
+    }
+    if (p === '/api/admin/highscores/clear' && method === 'POST') {
+      const n = solo.scores.length;
+      solo.scores = [];
+      solo.saveScores();
+      return sendJSON(res, 200, { removed: n });
     }
     if (p === '/api/admin/icons' && method === 'GET') {
       let custom = [];
@@ -410,6 +481,7 @@ const server = http.createServer((req, res) => {
   // ---- static
   if (method !== 'GET' && method !== 'HEAD') return sendText(res, 405, 'Method not allowed');
   if (p === '/' || /^\/r\/[A-Za-z0-9]{1,12}\/?$/.test(p)) return serveFile(res, path.join(PUBLIC_DIR, 'index.html'), false);
+  if (p === '/solo' || p === '/solo/') return serveFile(res, path.join(PUBLIC_DIR, 'solo.html'), false);
   if (p === '/admin' || p === '/admin/') return serveFile(res, path.join(PUBLIC_DIR, 'admin.html'), false);
 
   const rel = path.normalize(decodeURIComponent(p)).replace(/^(\.\.[\/\\])+/, '');
@@ -486,6 +558,7 @@ ws.attach(server, {
         case 'settings': room.updateSettings(player.id, m.settings); break;
         case 'kick': room.kick(player.id, String(m.id || '')); break;
         case 'skip': room.skip(player.id); break;
+        case 'pause': room.pause(player.id, m.on); break;
         case 'lobby': room.backToLobby(player.id); break;
         case 'lookup': room.handleLookup(player, m.q); break;
         case 'sync': conn.sendJSON(room.stateFor(player)); break;

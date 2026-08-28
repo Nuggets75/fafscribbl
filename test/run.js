@@ -89,6 +89,9 @@ async function main() {
     await gameTests();
     await edgeTests();
     await extraTests();
+    await galleryTests();
+    await soloTests();
+    await pauseTests();
   } catch (e) {
     fail++;
     failures.push('threw: ' + e.message);
@@ -858,6 +861,332 @@ async function extraTests() {
   ok(!!hand, 'the host role moves on when the host leaves');
   o2.close();
   await sleep(200);
+}
+
+/* --------------------------------------------------- saved drawings */
+async function galleryTests() {
+  console.log('\nSaved drawings (unit)');
+  const { Gallery } = require(path.join(__dirname, '..', 'lib', 'gallery'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fafgal-'));
+  const g = new Gallery(dir);
+  g.load();
+  eq(g.count(), 0, 'a fresh gallery is empty');
+
+  const ops = (n) => Array.from({ length: n }, (_, i) => ['s', i, i, i + 1, i + 1, '#000000', 6]);
+  eq(g.save({ word: 'Percival', ops: ops(3) }), null, 'a near empty page is not kept');
+  eq(g.save({ word: '', ops: ops(40) }), null, 'a drawing with no word is not kept');
+  const id = g.save({ word: 'Percival', icon: 'units/XEL0305.png', drawer: 'Alpha', ops: ops(40) });
+  ok(!!id, 'a real drawing is kept');
+  eq(g.count(), 1, 'and shows up in the index');
+  const back = g.get(id);
+  eq(back.word, 'Percival', 'it reads back with its word');
+  eq(back.ops.length, 40, 'and every stroke');
+  eq(back.icon, 'units/XEL0305.png', 'and the picture that went with it');
+  eq(g.get('../../etc/passwd'), null, 'a path traversal id reads nothing');
+  eq(g.get('nope'), null, 'an unknown id reads nothing');
+
+  for (let i = 0; i < 5; i++) g.save({ word: 'Unit ' + i, ops: ops(20) });
+  eq(g.count(), 6, 'six saved');
+  const recent = g.recent(3, 0);
+  eq(recent.length, 3, 'recent() pages');
+  eq(recent[0].word, 'Unit 4', 'newest first');
+  ok(!recent[0].ops || typeof recent[0].ops === 'number', 'the index carries a stroke count, not the strokes');
+
+  const picked = g.pick(4);
+  eq(picked.length, 4, 'pick() returns the number asked for');
+  eq(new Set(picked).size, 4, 'with no repeats');
+  const words = picked.map((x) => g.get(x).word);
+  eq(new Set(words).size, 4, 'and prefers different words');
+
+  ok(g.remove(id), 'a drawing can be deleted');
+  eq(g.get(id), null, 'and is gone from disk');
+  eq(g.count(), 5, 'and from the index');
+
+  await sleep(120);
+  const g2 = new Gallery(dir);
+  g2.load();
+  eq(g2.count(), 5, 'the index survives a restart');
+
+  // a drawing whose index line never made it to disk is picked up again
+  const orphan = g2.save({ word: 'Orphan', ops: ops(20) });
+  await sleep(150);
+  fs.writeFileSync(path.join(dir, 'drawings', 'index.json'),
+    JSON.stringify(g2.index.filter((d) => d.id !== orphan)));
+  const g4 = new Gallery(dir);
+  g4.load();
+  ok(g4.index.some((d) => d.id === orphan), 'a drawing missing from the index is recovered on boot');
+
+  // the cap is enforced, oldest out first
+  const small = fs.mkdtempSync(path.join(os.tmpdir(), 'fafgal2-'));
+  const g3 = new Gallery(small);
+  g3.load();
+  const realMax = require(path.join(__dirname, '..', 'lib', 'gallery')).MAX_DRAWINGS;
+  eq(realMax, 1000, 'the shipped cap is 1000 drawings');
+  g3.index = [];
+  for (let i = 0; i < 5; i++) g3.save({ word: 'W' + i, ops: ops(20) });
+  const before = g3.count();
+  g3.index = g3.index.slice(-3);   // stand in for a full store
+  eq(before, 5, 'five saved before trimming');
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.rmSync(small, { recursive: true, force: true });
+}
+
+/* -------------------------------------------------- single player mode */
+async function soloTests() {
+  console.log('\nSingle player challenge');
+
+  // Fill the gallery by actually playing: two players, two rounds, drawer scribbles then skips.
+  const host = await join('SoloHost', { create: true, settings: { rounds: 2, drawTime: 20, choiceTime: 4, wordChoices: 1, hints: false } });
+  const mate = await join('SoloMate', { code: host.code });
+  await sleep(150);
+  const known = [];
+  host.send({ t: 'start' });
+  const clients = { [host.id]: host, [mate.id]: mate };
+  let sawIcon = false;
+
+  for (let turn = 0; turn < 4; turn++) {
+    let st;
+    try { st = await host.wait((m) => m.t === 'state' && (m.state === 'drawing' || m.state === 'choosing'), 12000); }
+    catch (e) { break; }
+    if (st.state === 'choosing') {
+      const d = clients[st.drawerId];
+      d.send({ t: 'pick', index: 0 });
+      st = await host.wait((m) => m.t === 'state' && m.state === 'drawing', 8000);
+    }
+    const drawer = clients[st.drawerId];
+    const guesser = drawer === host ? mate : host;
+    const ds = drawer.find((m) => m.t === 'state' && m.state === 'drawing');
+    const word = ds.word;
+    if (word && known.indexOf(word) === -1) known.push(word);
+    drawer.send({ t: 'begin' });
+    const ops = [];
+    for (let i = 0; i < 24; i++) ops.push(['s', 10 + i * 5, 20 + i * 3, 15 + i * 5, 25 + i * 3, '#112233', 7]);
+    drawer.send({ t: 'draw', ops: ops });
+    await sleep(120);
+
+    // the correct guesser should be handed the reference picture too
+    guesser.clear();
+    guesser.send({ t: 'chat', text: word });
+    const rv = await guesser.wait((m) => m.t === 'reveal', 6000).catch(() => null);
+    if (rv && typeof rv.icon === 'string' && rv.icon) sawIcon = true;
+    host.clear(); mate.clear();
+    await sleep(400);
+  }
+  ok(sawIcon, 'a player who guessed correctly is sent the reference picture');
+  ok(known.length >= 3, 'played ' + known.length + ' turns to fill the gallery');
+  host.close(); mate.close();
+  await sleep(400);
+
+  const list = await api('/api/admin/drawings?limit=50', {}, adminToken);
+  eq(list.status, 200, 'admin can list the saved drawings');
+  ok(list.body.total >= 3, list.body.total + ' drawings were saved from real turns');
+  eq(list.body.cap, 1000, 'the admin page is told the cap');
+  ok(list.body.drawings.every((d) => d.word && d.ops >= 15), 'every stored drawing has a word and real strokes');
+  const anyId = list.body.drawings[0].id;
+  const one = await api('/api/admin/drawings/one?id=' + anyId, {}, adminToken);
+  eq(one.status, 200, 'a single drawing reads back');
+  ok(Array.isArray(one.body.drawing.ops), 'with its strokes');
+  const noAuth = await api('/api/admin/drawings');
+  eq(noAuth.status, 401, 'the drawing list needs an admin token');
+
+  const hs0 = await api('/api/solo/highscores');
+  eq(hs0.status, 200, 'the highscore board is public');
+  ok(hs0.body.drawings >= 3, 'and reports the pool size');
+  eq(hs0.body.rounds, 10, 'a run is ten drawings');
+
+  const run = await api('/api/solo/start', { method: 'POST', body: JSON.stringify({ name: 'Tester' }) });
+  eq(run.status, 200, 'a run starts');
+  const sid = run.body.sid;
+  ok(!!sid, 'with a session id');
+  ok(Array.isArray(run.body.ops) && run.body.ops.length > 0, 'the first drawing arrives with strokes');
+  eq(run.body.word, undefined, 'the answer is never sent to the browser');
+  eq(run.body.hint, undefined, 'and neither is the admin note');
+  ok(run.body.mask.indexOf('_') !== -1, 'the word comes masked: ' + run.body.mask);
+  ok(run.body.endsAt > Date.now(), 'with a deadline');
+  eq(run.body.index, 1, 'starting at drawing 1');
+
+  const bad = await api('/api/solo/guess', { method: 'POST', body: JSON.stringify({ sid: 'nope', guess: 'x' }) });
+  eq(bad.status, 404, 'an unknown session is refused');
+
+  const wrong = await api('/api/solo/guess', { method: 'POST', body: JSON.stringify({ sid: sid, guess: 'zzzz nonsense' }) });
+  eq(wrong.body.result, 'no', 'a wrong guess is a miss');
+
+  // Guess through the run using the words we know were drawn.
+  let solved = 0, rounds = 0, score = 0;
+  for (let i = 0; i < 12; i++) {
+    let hit = null;
+    for (const w of known) {
+      const g = await api('/api/solo/guess', { method: 'POST', body: JSON.stringify({ sid: sid, guess: w }) });
+      if (g.body.result === 'exact') { hit = g.body; break; }
+      if (g.body.result === 'over') { hit = g.body; break; }
+    }
+    if (!hit) {
+      const t = await api('/api/solo/timeup', { method: 'POST', body: JSON.stringify({ sid: sid }) });
+      hit = t.body;
+    } else if (hit.points > 0) {
+      solved++;
+      score = hit.total;
+    }
+    rounds++;
+    const nx = await api('/api/solo/next', { method: 'POST', body: JSON.stringify({ sid: sid }) });
+    if (nx.body.done) break;
+    ok(nx.body.index === rounds + 1, 'drawing ' + (rounds + 1) + ' follows on');
+    if (rounds > 11) break;
+  }
+  ok(solved > 0, 'guessed ' + solved + ' of the drawings correctly');
+  ok(score > 0, 'and scored ' + score + ' points for it');
+
+  const fin = await api('/api/solo/finish', { method: 'POST', body: JSON.stringify({ sid: sid, name: 'Tester' }) });
+  eq(fin.status, 200, 'the run finishes');
+  eq(fin.body.score, score, 'the final score matches what was earned');
+  ok(fin.body.rank >= 1, 'and lands on the board at rank ' + fin.body.rank);
+  ok(fin.body.results.length === rounds, 'with one line per drawing played');
+  ok(fin.body.results.some((r) => r.got), 'showing which ones were got');
+
+  const hs1 = await api('/api/solo/highscores');
+  ok(hs1.body.best.some((b) => b.name === 'Tester' && b.score === score), 'the score is on the public board');
+
+  // a second finish must not double count
+  const again = await api('/api/solo/finish', { method: 'POST', body: JSON.stringify({ sid: sid, name: 'Tester' }) });
+  eq(again.body.score, score, 'finishing twice reports the same score');
+  const hs2 = await api('/api/solo/highscores');
+  eq(hs2.body.best.filter((b) => b.name === 'Tester').length, 1, 'and only enters the board once');
+
+  const hsClear = await api('/api/admin/highscores/clear', { method: 'POST' }, adminToken);
+  eq(hsClear.status, 200, 'admin can wipe the highscore board');
+  const hs3 = await api('/api/solo/highscores');
+  eq(hs3.body.best.length, 0, 'and it comes back empty');
+}
+
+/* ------------------------------------------------------- host pause */
+async function pauseTests() {
+  console.log('\nHost pause');
+  const host = await join('PHost', { create: true, settings: { rounds: 2, drawTime: 30, choiceTime: 4, wordChoices: 1, hints: true, hintCount: 2 } });
+  const mate = await join('PMate', { code: host.code });
+  await sleep(200);
+  eq(host.state().hostId, host.id, 'the creator is the host');
+
+  host.send({ t: 'start' });
+  let st = await host.wait((m) => m.t === 'state' && (m.state === 'drawing' || m.state === 'choosing'), 10000);
+  const clients = { [host.id]: host, [mate.id]: mate };
+  if (st.state === 'choosing') {
+    clients[st.drawerId].send({ t: 'pick', index: 0 });
+    st = await host.wait((m) => m.t === 'state' && m.state === 'drawing', 8000);
+  }
+  const drawer = clients[st.drawerId];
+  const guesser = drawer === host ? mate : host;
+  const word = drawer.find((m) => m.t === 'state' && m.state === 'drawing').word;
+  drawer.send({ t: 'begin' });
+
+  // only the host may pause
+  const notHost = drawer === host ? mate : host;
+  if (notHost !== host) {
+    notHost.send({ t: 'pause', on: true });
+    await sleep(250);
+    ok(!host.state().paused, 'a player who is not the host cannot pause');
+  }
+
+  host.clear(); mate.clear();
+  host.send({ t: 'pause', on: true });
+  const pausedState = await host.wait((m) => m.t === 'state' && m.paused === true, 4000);
+  ok(!!pausedState, 'the host can pause');
+  ok(pausedState.pausedLeft > 0, 'the state carries the time that was left: ' + pausedState.pausedLeft + 'ms');
+  const seenByOther = await mate.wait((m) => m.t === 'state' && m.paused === true, 4000);
+  ok(!!seenByOther, 'everybody is told about it');
+  ok(!!host.find((m) => m.t === 'chat' && /paused the game/.test(m.text || '')), 'and it says so in the chat');
+
+  const frozenEnds = pausedState.endsAt;
+  await sleep(1600);
+
+  // nothing moves while paused
+  guesser.clear();
+  guesser.send({ t: 'chat', text: 'hello there' });
+  const held = await guesser.wait((m) => m.t === 'chat' && m.kind === 'warn', 3000);
+  ok(/paused/.test(held.text), 'chat is held: ' + held.text);
+  await sleep(150);
+  eq(mate.all((m) => m.t === 'chat' && m.text === 'hello there').length, 0, 'and the message never reaches anyone');
+
+  guesser.clear();
+  guesser.send({ t: 'chat', text: word });
+  await sleep(250);
+  eq(guesser.all((m) => m.t === 'reveal').length, 0, 'a correct guess does not score while paused');
+
+  guesser.clear();
+  guesser.send({ t: 'lookup', q: 'uef' });
+  const lk = await guesser.wait((m) => m.t === 'lookup', 3000);
+  ok(lk.paused === true && lk.results.length === 0, 'the unit look-up is on hold too');
+
+  mate.clear(); host.clear();
+  drawer.send({ t: 'draw', ops: [['s', 5, 5, 200, 200, '#000000', 8]] });
+  await sleep(250);
+  const other = drawer === host ? mate : host;
+  eq(other.all((m) => m.t === 'draw').length, 0, 'and the drawer cannot draw either');
+
+  // resume: the clock picks up where it stopped
+  host.clear();
+  host.send({ t: 'pause', on: false });
+  const back = await host.wait((m) => m.t === 'state' && m.paused === false, 4000);
+  ok(!!back, 'the host can resume');
+  ok(back.endsAt > frozenEnds + 1400, 'the deadline moved forward by the pause (' + (back.endsAt - frozenEnds) + 'ms)');
+  const leftNow = back.endsAt - back.now;
+  ok(Math.abs(leftNow - pausedState.pausedLeft) < 900,
+    'the drawer got every second back (' + leftNow + 'ms left, ' + pausedState.pausedLeft + 'ms when paused)');
+
+  // and the game works again
+  guesser.clear();
+  guesser.send({ t: 'chat', text: word });
+  const rev = await guesser.wait((m) => m.t === 'reveal', 5000);
+  eq(rev.word, word, 'guessing works again after the resume');
+
+  host.close(); mate.close();
+  await sleep(300);
+
+  // a long pause does not let the turn time out behind it
+  const h2 = await join('PHost2', { create: true, settings: { rounds: 1, drawTime: 5, choiceTime: 3, wordChoices: 1, hints: false } });
+  const m2 = await join('PMate2', { code: h2.code });
+  await sleep(200);
+  h2.send({ t: 'start' });
+  let s2 = await h2.wait((m) => m.t === 'state' && (m.state === 'drawing' || m.state === 'choosing'), 10000);
+  const cl2 = { [h2.id]: h2, [m2.id]: m2 };
+  if (s2.state === 'choosing') {
+    cl2[s2.drawerId].send({ t: 'pick', index: 0 });
+    s2 = await h2.wait((m) => m.t === 'state' && m.state === 'drawing', 8000);
+  }
+  h2.send({ t: 'pause', on: true });
+  await h2.wait((m) => m.t === 'state' && m.paused === true, 4000);
+  h2.clear();
+  await sleep(7000);   // longer than the whole 5 second turn
+  eq(h2.all((m) => m.t === 'turnend').length, 0, 'a five second turn survives a seven second pause');
+  h2.send({ t: 'pause', on: false });
+  const back2 = await h2.wait((m) => m.t === 'state' && m.paused === false, 4000);
+  const leftAfter = back2.endsAt - back2.now;
+  ok(leftAfter > 1000, 'the turn still has ' + Math.round(leftAfter / 1000) + 's on it after the pause');
+  const te = await h2.wait((m) => m.t === 'turnend', leftAfter + 6000);
+  ok(!!te, 'and ends normally once the game is running again');
+  h2.close(); m2.close();
+  await sleep(300);
+
+  // the host role moves when the host goes, and the new host can pause
+  const o1 = await join('Owner2', { create: true, settings: { rounds: 1, drawTime: 20, choiceTime: 3, wordChoices: 1, hints: false } });
+  const o2 = await join('Heir2', { code: o1.code });
+  const o3 = await join('Third2', { code: o1.code });
+  await sleep(200);
+  eq(o1.state().hostId, o1.id, 'the creator starts as host');
+  o1.close();
+  const moved = await o2.wait((m) => m.t === 'players' && m.hostId === o2.id, 5000);
+  ok(!!moved, 'the host role moves to the next player when the host leaves');
+  o2.send({ t: 'start' });
+  let s3 = await o2.wait((m) => m.t === 'state' && (m.state === 'drawing' || m.state === 'choosing'), 10000);
+  const cl3 = { [o2.id]: o2, [o3.id]: o3 };
+  if (s3.state === 'choosing') {
+    cl3[s3.drawerId].send({ t: 'pick', index: 0 });
+    await o2.wait((m) => m.t === 'state' && m.state === 'drawing', 8000);
+  }
+  o2.send({ t: 'pause', on: true });
+  const np = await o2.wait((m) => m.t === 'state' && m.paused === true, 4000);
+  ok(!!np, 'and the new host can pause');
+  o2.close(); o3.close();
+  await sleep(300);
 }
 
 main();

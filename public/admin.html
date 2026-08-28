@@ -9,7 +9,15 @@
 <style>
   body{overflow:auto}
   .wrap{max-width:1240px;margin:0 auto;padding:18px}
-  .tabs{display:flex;gap:8px;margin:14px 0}
+  .tabs{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap}
+  #drawGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:12px}
+  .dcard{border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--panel2)}
+  .dcard.sel{border-color:var(--accent)}
+  .dcard canvas{width:100%;background:#fff;border-radius:6px;display:block;cursor:zoom-in}
+  .dcard .dmeta{font-size:12px;color:var(--dim);margin-top:6px;display:flex;gap:6px;align-items:center}
+  .dcard .dmeta b{color:var(--text);font-size:13px}
+  #drawModal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;
+    justify-content:center;padding:20px;z-index:60}
   .tab{padding:8px 14px;border-radius:8px;background:var(--panel2);cursor:pointer;border:1px solid var(--line)}
   .tab.on{border-color:var(--accent);background:#2b2019}
   table{width:100%;border-collapse:collapse;font-size:14px}
@@ -77,6 +85,7 @@
       <div class="tab" data-tab="defaults">Lobby defaults</div>
       <div class="tab" data-tab="filters">Lobby filters</div>
       <div class="tab" data-tab="rooms">Live lobbies</div>
+      <div class="tab" data-tab="drawings">Saved drawings</div>
       <div class="tab" data-tab="io">Import / export</div>
       <div style="flex:1"></div>
       <button class="ghost small" id="logoutBtn">Log out</button>
@@ -190,6 +199,25 @@
       </div>
     </section>
 
+    <!-- ------------------------------------------------ drawings -->
+    <section id="tab-drawings" class="hide">
+      <div class="card">
+        <p class="hint" style="margin:0 0 10px">
+          Every finished turn with something actually drawn on it is kept here, newest first,
+          up to <span id="drawCap">1000</span>. These are what the single player challenge uses.
+          Click a thumbnail to see it full size.</p>
+        <div class="bar">
+          <button class="small" id="drawRefresh">Refresh</button>
+          <button class="small" id="drawMore">Load more</button>
+          <button class="small danger" id="drawDelSel">Delete selected</button>
+          <button class="small danger" id="drawClear">Delete every drawing</button>
+          <button class="small danger" id="hsClear">Reset the highscore</button>
+          <span class="stat" id="drawStat"></span>
+        </div>
+        <div id="drawGrid"></div>
+      </div>
+    </section>
+
     <!-- ------------------------------------------------ io -->
     <section id="tab-io" class="hide">
       <div class="grid2">
@@ -223,6 +251,16 @@
         </div>
       </div>
     </section>
+  </div>
+</div>
+<div id="drawModal" class="hide">
+  <div class="iconbox" style="max-width:960px">
+    <div class="bar" style="margin-bottom:8px">
+      <b id="drawFor">Drawing</b>
+      <div style="flex:1"></div>
+      <button class="small ghost" id="drawModalClose">Close</button>
+    </div>
+    <canvas id="drawBig" width="900" height="560" style="width:100%;background:#fff;border-radius:8px"></canvas>
   </div>
 </div>
 <div id="iconModal" class="hide">

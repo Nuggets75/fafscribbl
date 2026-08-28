@@ -356,7 +356,8 @@
       case 'canvas': rebuild(m.ops || []); break;
       case 'mask': if (S) { S.mask = m.mask; renderHeader(); } break;
       case 'reveal':
-        if (S) { S.word = m.word; S.mask = m.word; renderHeader(); }
+        // Now that this player knows the word, they get the reference picture too.
+        if (S) { S.word = m.word; S.mask = m.word; S.wordIcon = m.icon || null; renderHeader(); renderRef(); }
         lastCorrect = Date.now();
         SFX.correct();
         break;
@@ -396,6 +397,24 @@
     $('wordSub').textContent = sub;
     $('wordMask').textContent = mask.replace(/ /g, '   ');
     $('skipBtn').classList.toggle('hide', !(S.state === 'drawing' && (isDrawer() || isHost())));
+
+    // Pause belongs to the host and only means anything once a game is running.
+    var canPause = isHost() && S.state !== 'lobby';
+    var pb = $('pauseBtn');
+    pb.classList.toggle('hide', !canPause);
+    pb.textContent = S.paused ? 'Resume' : 'Pause';
+    pb.classList.toggle('on', !!S.paused);
+    renderPaused();
+  }
+
+  function renderPaused() {
+    var on = !!(S && S.paused);
+    $('ovPaused').classList.toggle('hide', !on);
+    $('resumeBtn').classList.toggle('hide', !(on && isHost()));
+    $('pausedBy').textContent = isHost()
+      ? 'You paused the game.'
+      : 'The host paused the game.';
+    document.body.classList.toggle('ispaused', on);
   }
   function countLetters(mask) {
     return String(mask || '').replace(/[^A-Za-z0-9_]/g, '').length;
@@ -625,6 +644,11 @@
     else prompt('Copy this link', text);
   }
   $('skipBtn').onclick = function () { send({ t: 'skip' }); };
+  $('pauseBtn').onclick = function () {
+    if (!isHost()) { toast('Only the host can pause'); return; }
+    send({ t: 'pause', on: !(S && S.paused) });
+  };
+  $('resumeBtn').onclick = function () { if (isHost()) send({ t: 'pause', on: false }); };
 
   /* --------- sound --------- */
   var AC = null, sndGain = null;
@@ -733,7 +757,9 @@
   function renderRef() {
     var panel = $('refPanel');
     // The button only exists when this particular unit actually has a picture.
-    var can = refAvailable() && isDrawer() && S.state === 'drawing';
+    // The server only sends wordIcon to people who are allowed to know the word, so
+    // this covers the drawer and anyone who has already guessed it.
+    var can = refAvailable() && S.state === 'drawing';
     $('toolRef').classList.toggle('hide', !can);
     if (!can) { panel.classList.add('hide'); return; }
     var want = refShown;
@@ -836,6 +862,7 @@
   });
   $('leaveBtn').onclick = function () {
     if (!confirm('Leave the lobby?')) return;
+    document.body.classList.remove('ispaused');
     disconnect();
     location.href = '/';
   };
@@ -979,6 +1006,7 @@
   function showLookup(m) {
     var box = $('lkResults');
     if (m.off) { box.innerHTML = '<p class="lkhint">The look-up is switched off in this lobby.</p>'; return; }
+    if (m.paused) { box.innerHTML = '<p class="lkhint">The game is paused.</p>'; return; }
     if ($('lkInput').value.trim() !== m.q) return;
     if (!m.results.length) {
       box.innerHTML = '<p class="lkhint">Nothing matches all of those words.</p>';
@@ -1052,11 +1080,20 @@
     }
     band.classList.remove('hide');
     if (!S.endsAt) {
-      el.innerHTML = '&#8734;';
+      el.innerHTML = S.paused ? 'paused' : '&#8734;';
+      el.classList.remove('low');
+      el.classList.toggle('held', !!S.paused);
+      lastLeft = null;
+      return;
+    }
+    if (S.paused) {
+      el.textContent = Math.max(0, Math.ceil(S.pausedLeft / 1000));
+      el.classList.add('held');
       el.classList.remove('low');
       lastLeft = null;
       return;
     }
+    el.classList.remove('held');
     var left = Math.max(0, Math.ceil((S.endsAt - now()) / 1000));
     el.textContent = left;
     el.classList.toggle('low', S.state === 'drawing' && left <= 10);
@@ -1076,6 +1113,14 @@
       $('dbLink').href = c.unitDb;
       $('dbLink2').href = c.unitDb;
       $('wordCount').textContent = c.words;
+      var info = $('soloInfo'), sbtn = $('soloBtn');
+      if (info) {
+        var n = c.drawings || 0;
+        info.textContent = n < 3
+          ? 'No saved drawings yet. Play a lobby round and they start collecting here.'
+          : n + ' drawings saved so far.';
+        if (sbtn) sbtn.classList.toggle('off', n < 3);
+      }
     }).catch(function () { /* offline */ });
   }
   function loadRooms() {

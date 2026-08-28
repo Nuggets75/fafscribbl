@@ -6,6 +6,9 @@ buildings.
 
 No FAF login and no accounts: players type a name and join a lobby by link or 5-letter code.
 
+There is a single player challenge too: every drawing people make in a lobby is kept, and the
+challenge replays ten of them against the clock for a spot on a global highscore.
+
 **Zero runtime dependencies.** Plain Node.js built-ins only (`http`, `crypto`, `fs`), including a
 hand-rolled WebSocket server. JSON file storage, no build step, no `npm install` in production.
 The container clones the repo and runs `server.js` directly, the same way faf-tourney does.
@@ -19,7 +22,8 @@ The container clones the repo and runs `server.js` directly, the same way faf-to
   a name and nothing else: no code box, no Create button to press by mistake. Somebody who has
   played before is put straight into the lobby without being asked anything.
 - Public lobbies are listed on the front page. Private lobbies are link only. Toggle per lobby.
-- The creator is the host. If the host leaves, the crown moves to the next player automatically.
+- The creator is the host. If the host leaves or drops out, the crown moves to the next connected
+  player automatically, in join order, and that player gets every host control including pause.
 - The host can kick players.
 - **The lobby is a screen, not a dialog.** While a lobby is waiting there is no drawing board at
   all: the middle column holds the lobby itself, with the player list and the chat either side,
@@ -88,6 +92,23 @@ That is the Factions group's **always include** tag, and it is editable like eve
 7. The turn ends when everyone has guessed, when the clock runs out, when the drawer presses
    Skip turn, or when the drawer disconnects. The word is then revealed to everybody along with
    the points scored.
+8. The host can pause at any point and nothing moves until he starts it again. See **Pause**.
+
+### Pause
+
+The host has a **Pause** button in the header from the moment a game starts. Press it and
+everything stops: the clock freezes on the second it was on, the drawer cannot draw, guesses and
+chat are held, and the unit look-up stops answering. Everybody sees a Paused panel over the board,
+which also hides the half-finished drawing so nobody can study it with the clock stopped.
+
+Press it again and the turn carries on with exactly the time it had. Every timer that drives the
+turn (the pick timer, the draw clock, the letter hints, the reveal screen and the end-of-game
+countdown) is frozen with the time it had left and put back untouched, and the deadlines all move
+forward by the length of the pause, so a pause costs the drawer nothing.
+
+There is no vote and no limit. It is the host's button, for as long as he wants, which is the
+point: people play this alongside another game. A turn that starts during a pause (the drawer
+left, say) starts paused too rather than quietly running down.
 
 ### Matching
 - Case, spaces, hyphens, apostrophes and accents are all ignored. `sou-atha`, `Sou Atha` and
@@ -149,7 +170,40 @@ Words with no match, map names for instance, simply have no picture until you up
 
 While setting up a lobby the host sees how many words the current filters leave, updating live as
 chips are toggled. Each chip carries its own word count too. With nothing selected it reads
-"242 words in the pool, everything is in play".
+"242 words in the pool, everything is in play". The front page counts the same pool as
+"faf related words", since the list has grown well past units.
+
+### Saved drawings
+
+Every turn that ends with something actually drawn on the board is saved: the strokes, the word,
+the picture that went with it and who drew it. Blank and near-blank pages are dropped
+(fewer than 15 strokes), and lobby-only custom words are never saved, so the challenge cannot
+show a word that is not in the list any more.
+
+The store keeps the most recent 1000 drawings, one gzipped file each plus a small index, so a
+save is one small write and nothing is ever rewritten wholesale. A busy drawing is about 18 KB
+compressed, so a full store is roughly 18 MB. When the cap is reached the oldest one is deleted.
+
+If the process is killed between writing a drawing and writing the index, the drawing is picked
+back up on the next boot rather than being orphaned.
+
+### Single player challenge
+
+`/solo`, and a card on the front page. Ten random drawings, forty seconds each, one drawing at a
+time. The strokes replay over the first ten seconds exactly as they were drawn.
+
+- Scoring is the same formula as a lobby round: `50 + round(350 * fraction of the clock left)`,
+  so 400 for an instant answer down to 50 at the buzzer.
+- Two letters are revealed as the clock runs down, at the halfway mark and again near the end,
+  and never more than 60% of the word.
+- Between drawings the answer and its picture are shown. That pause is free: the next clock does
+  not start until the browser asks for the next drawing.
+- Giving up still banks what has been scored so far.
+- The global highscore keeps the top 50 runs, and shows the top 20.
+
+**The answers never leave the server.** The browser is sent the strokes and a letter mask, and
+every guess is checked server side, so the score is worth something. Run starts are rate limited
+per IP.
 
 ### The unit look-up
 
@@ -229,6 +283,10 @@ Wrong passwords are rate limited per IP.
   you can see what is available to build a group from.
 - **Live lobbies**: every lobby on the server, who is in it, what is being drawn right now, and
   a button to close one.
+- **Saved drawings**: every stored drawing, newest first, with the word it was drawn for and
+  who drew it. The thumbnails are the real strokes, replayed; click one to see it full size.
+  Delete one, delete a selection, delete every drawing, or reset the single player highscore.
+  Deleting drawings only shrinks what the challenge can show, it never touches the word list.
 - **Import / export**: import plain lines or a JSON export. **Import only ever adds.** Words
   already in the list are skipped, nothing is overwritten and nothing is removed. Export
   downloads the whole list including disabled words.
@@ -296,9 +354,12 @@ start. App listens on port **8092**.
 | `UNIT_DB_URL` | `https://faforever.github.io/etfreeman-db/#/` | where the "Unit DB" button points |
 | `SITE_NAME` | `fafscribbl` | shown in the API config |
 | `FAFSCRIBBL_EMPTY_MS` | `60000` | how long an empty lobby is held open, testing knob |
+| `FAFSCRIBBL_MAX_DRAWINGS` | `1000` | how many saved drawings to keep |
+| `FAFSCRIBBL_MIN_OPS` | `15` | strokes a drawing needs before it is worth keeping |
 
 Uploaded icons live in `$DATA_DIR/icons/` and are served from `/icons/custom/...`, so they
-survive a redeploy along with the word list.
+survive a redeploy along with the word list. Saved drawings live in `$DATA_DIR/drawings/` and the
+single player highscore in `$DATA_DIR/highscores.json`, on the same volume.
 
 If `ADMIN_PASSWORD` is not set the server generates one, prints it to the container log and
 carries on, so a missing variable never stops the site from running. It changes on every restart,
@@ -314,12 +375,22 @@ Two switches on the proxy host, both of which have bitten this stack before:
 
 ### Storage
 
-One file, `$DATA_DIR/fafscribbl.json`, holding the word list and the default lobby settings.
-Written atomically (temp file plus rename). A corrupt file is moved aside and the shipped word
-list is loaded instead, rather than the server refusing to start.
+`$DATA_DIR/fafscribbl.json` holds the word list and the default lobby settings. Written
+atomically (temp file plus rename). A corrupt file is moved aside and the shipped word list is
+loaded instead, rather than the server refusing to start.
 
-Lobbies, players, scores and drawings are in memory only. Restarting the container ends every
-game in progress. That is deliberate: nothing about a live lobby is worth persisting.
+Alongside it on the same volume:
+
+```
+$DATA_DIR/fafscribbl.json     word list and lobby defaults
+$DATA_DIR/icons/              pictures uploaded in the admin
+$DATA_DIR/drawings/           saved drawings, gzipped, plus index.json
+$DATA_DIR/highscores.json     single player challenge board
+```
+
+Lobbies, players and live scores are in memory only. Restarting the container ends every game in
+progress. That is deliberate: nothing about a live lobby is worth persisting. Finished drawings
+are the exception, and they are written as each turn ends.
 
 ---
 
@@ -331,10 +402,13 @@ lib/ws.js            RFC 6455 WebSocket server, ~200 lines, no dependencies
 lib/game.js          rooms, turn engine, scoring, chat rules, drawing relay
 lib/words.js         normalisation, Levenshtein, close-guess and leak detection, masking
 lib/store.js         JSON persistence
+lib/gallery.js       saved drawings, gzipped one file each, capped and self-healing
+lib/solo.js          single player challenge sessions, scoring and the highscore board
 data/words.seed.json the shipped word list
 data/icons.bundle.json  506 unit icons, base64, one file
 data/icons.map.json     word to icon lookup used to fill icons in automatically
-public/              index.html, app.js, admin.html, admin.js, style.css, favicon.svg
+public/              index.html, app.js, solo.html, solo.js, admin.html, admin.js,
+                     style.css, favicon.svg
 test/run.js          end to end test suite
 ```
 
@@ -345,10 +419,12 @@ intent, nothing more.
 ### WebSocket protocol
 
 Client to server: `hello`, `chat`, `draw`, `begin`, `undo`, `clearCanvas`, `pick`, `start`,
-`settings`, `kick`, `skip`, `lobby`, `sync`, `ping`.
+`settings`, `kick`, `skip`, `pause`, `lobby`, `lookup`, `sync`, `ping`.
 
 Server to client: `joined`, `state`, `players`, `settings`, `chat`, `draw`, `canvas`, `mask`,
-`reveal`, `choices`, `turnend`, `gameend`, `error`, `kicked`, `closed`, `pong`.
+`reveal`, `choices`, `turnend`, `gameend`, `lookup`, `error`, `kicked`, `closed`, `pong`.
+The pause is carried on `state` as `paused` and `pausedLeft`, not as a message of its own, so a
+client that reconnects mid-pause gets it for free.
 
 Drawing ops are compact arrays: `['s', x0, y0, x1, y1, colour, width]` for a segment,
 `['f', x, y, colour]` for a fill. Capped at 60000 ops per turn and 2000 ops per second per
@@ -374,8 +450,10 @@ HTTP routes, the admin API, the whole game flow, the word list collapse rules, h
 guesses, chat visibility, drawing permissions, reconnection, kicking, host handover, filters and
 custom words, self-closing lobbies, the editable filter groups, the pool counter, tags that
 contain spaces, opt-in filtering, icon matching and uploads, the unit look-up and its map
-exclusion, hint scaling, the picture toggle, and that no admin request can wipe the word list.
-175 assertions.
+exclusion, hint scaling, the picture toggle, the saved drawing store and its cap, and the whole
+single player run from start to highscore, including that the answer is never sent to the
+browser and that a finished run cannot be banked twice, the host pause down to the second the
+clock is handed back, and the host role moving when the host leaves. 257 assertions.
 
 To catch undefined identifiers, which `node --check` cannot:
 

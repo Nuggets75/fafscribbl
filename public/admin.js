@@ -63,13 +63,159 @@
     t.onclick = function () {
       Array.prototype.forEach.call(document.querySelectorAll('.tab[data-tab]'), function (x) { x.classList.remove('on'); });
       t.classList.add('on');
-      ['words', 'defaults', 'filters', 'rooms', 'io'].forEach(function (n) {
+      ['words', 'defaults', 'filters', 'rooms', 'drawings', 'io'].forEach(function (n) {
         $('tab-' + n).classList.toggle('hide', n !== t.dataset.tab);
       });
       if (t.dataset.tab === 'rooms') loadRooms();
       if (t.dataset.tab === 'filters') refreshCounts();
+      if (t.dataset.tab === 'drawings') loadDrawings(true);
     };
   });
+
+  /* -------------------------------------------------- saved drawings */
+  var drawOffset = 0, drawTotal = 0, drawSel = {};
+  var DW = 900, DH = 560;
+
+  function hexToRgb(h) {
+    var t = String(h || '#000000').replace('#', '');
+    if (t.length === 3) t = t[0] + t[0] + t[1] + t[1] + t[2] + t[2];
+    var n = parseInt(t, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  // Thumbnails skip the flood fills: they are slow and a filled area reads fine as an outline.
+  function paint(cv, ops, doFills) {
+    var ctx = cv.getContext('2d', { willReadFrequently: !!doFills });
+    var sx = cv.width / DW, sy = cv.height / DH;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.setTransform(sx, 0, 0, sy, 0, 0);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (var i = 0; i < ops.length; i++) {
+      var op = ops[i];
+      if (!op || !op.length) continue;
+      if (op[0] === 's') {
+        ctx.strokeStyle = op[5];
+        ctx.lineWidth = op[6];
+        ctx.beginPath();
+        ctx.moveTo(op[1], op[2]);
+        ctx.lineTo(op[3], op[4]);
+        ctx.stroke();
+      } else if (op[0] === 'f' && doFills) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        fillOn(ctx, cv, Math.round(op[1] * sx), Math.round(op[2] * sy), op[3]);
+        ctx.setTransform(sx, 0, 0, sy, 0, 0);
+      }
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  function fillOn(ctx, cv, x, y, color) {
+    var w = cv.width, h = cv.height;
+    x = Math.max(0, Math.min(w - 1, x));
+    y = Math.max(0, Math.min(h - 1, y));
+    var img = ctx.getImageData(0, 0, w, h), d = img.data;
+    var st = (y * w + x) * 4, tr = d[st], tg = d[st + 1], tb = d[st + 2];
+    var rgb = hexToRgb(color);
+    if (Math.abs(tr - rgb[0]) < 6 && Math.abs(tg - rgb[1]) < 6 && Math.abs(tb - rgb[2]) < 6) return;
+    var seen = new Uint8Array(w * h), stack = [y * w + x];
+    while (stack.length) {
+      var p = stack.pop();
+      if (seen[p]) continue;
+      seen[p] = 1;
+      var i = p * 4;
+      if (Math.abs(d[i] - tr) > 40 || Math.abs(d[i + 1] - tg) > 40 || Math.abs(d[i + 2] - tb) > 40) continue;
+      d[i] = rgb[0]; d[i + 1] = rgb[1]; d[i + 2] = rgb[2]; d[i + 3] = 255;
+      var px = p % w, py = (p - px) / w;
+      if (px > 0) stack.push(p - 1);
+      if (px < w - 1) stack.push(p + 1);
+      if (py > 0) stack.push(p - w);
+      if (py < h - 1) stack.push(p + w);
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  function drawStat() {
+    var n = Object.keys(drawSel).length;
+    $('drawStat').textContent = drawTotal + ' saved' + (n ? ', ' + n + ' selected' : '');
+    $('drawMore').disabled = $('drawGrid').children.length >= drawTotal;
+  }
+
+  function loadDrawings(reset) {
+    if (reset) { drawOffset = 0; drawSel = {}; $('drawGrid').innerHTML = ''; }
+    return api('/api/admin/drawings?limit=24&offset=' + drawOffset).then(function (d) {
+      drawTotal = d.total;
+      if (d.cap) $('drawCap').textContent = d.cap;
+      drawOffset += d.drawings.length;
+      if (!d.drawings.length && !$('drawGrid').children.length) {
+        $('drawGrid').innerHTML = '<p class="hint">No drawings saved yet. They appear here as soon as people finish turns.</p>';
+      }
+      d.drawings.forEach(addCard);
+      drawStat();
+    }).catch(function (e) { $('drawStat').textContent = e.message; });
+  }
+
+  function addCard(d) {
+    var card = document.createElement('div');
+    card.className = 'dcard';
+    card.innerHTML =
+      '<canvas width="380" height="236"></canvas>' +
+      '<div class="dmeta"><input type="checkbox" style="width:auto;margin:0"> <b></b>' +
+      '<span style="flex:1"></span><button class="small danger">Delete</button></div>';
+    var cv = card.querySelector('canvas');
+    card.querySelector('b').textContent = d.word;
+    card.querySelector('b').title = (d.drawer ? 'drawn by ' + d.drawer + ', ' : '') + new Date(d.at).toLocaleString();
+    var cb = card.querySelector('input');
+    cb.onchange = function () {
+      if (cb.checked) drawSel[d.id] = true; else delete drawSel[d.id];
+      card.classList.toggle('sel', cb.checked);
+      drawStat();
+    };
+    card.querySelector('button').onclick = function () {
+      api('/api/admin/drawings', { method: 'DELETE', body: JSON.stringify({ ids: [d.id] }) })
+        .then(function (r) { drawTotal = r.total; delete drawSel[d.id]; card.remove(); drawStat(); })
+        .catch(function (e) { alert(e.message); });
+    };
+    cv.onclick = function () { openBig(d); };
+    $('drawGrid').appendChild(card);
+    api('/api/admin/drawings/one?id=' + encodeURIComponent(d.id)).then(function (r) {
+      card._ops = r.drawing.ops;
+      paint(cv, r.drawing.ops, false);
+    }).catch(function () { /* gone */ });
+  }
+
+  function openBig(d) {
+    $('drawFor').textContent = d.word + (d.drawer ? '  -  drawn by ' + d.drawer : '');
+    $('drawModal').classList.remove('hide');
+    api('/api/admin/drawings/one?id=' + encodeURIComponent(d.id)).then(function (r) {
+      paint($('drawBig'), r.drawing.ops, true);
+    }).catch(function () { /* gone */ });
+  }
+  $('drawModalClose').onclick = function () { $('drawModal').classList.add('hide'); };
+  $('drawModal').onclick = function (e) { if (e.target === $('drawModal')) $('drawModal').classList.add('hide'); };
+
+  $('drawRefresh').onclick = function () { loadDrawings(true); };
+  $('drawMore').onclick = function () { loadDrawings(false); };
+  $('drawDelSel').onclick = function () {
+    var ids = Object.keys(drawSel);
+    if (!ids.length) { alert('Nothing selected.'); return; }
+    if (!confirm('Delete ' + ids.length + ' drawing' + (ids.length === 1 ? '' : 's') + '?')) return;
+    api('/api/admin/drawings', { method: 'DELETE', body: JSON.stringify({ ids: ids }) })
+      .then(function () { loadDrawings(true); }).catch(function (e) { alert(e.message); });
+  };
+  $('drawClear').onclick = function () {
+    if (!confirm('Delete every saved drawing? The single player challenge will have nothing left to show until new ones are drawn.')) return;
+    if (!confirm('Really delete all ' + drawTotal + '? This cannot be undone.')) return;
+    api('/api/admin/drawings/clear', { method: 'POST' })
+      .then(function (r) { alert(r.removed + ' deleted.'); loadDrawings(true); })
+      .catch(function (e) { alert(e.message); });
+  };
+  $('hsClear').onclick = function () {
+    if (!confirm('Wipe the single player highscore board?')) return;
+    api('/api/admin/highscores/clear', { method: 'POST' })
+      .then(function (r) { alert(r.removed + ' scores removed.'); })
+      .catch(function (e) { alert(e.message); });
+  };
 
   /* ------------------------------------------------------------- boot */
   function boot() {
