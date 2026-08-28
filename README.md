@@ -19,8 +19,11 @@ The container clones the repo and runs `server.js` directly, the same way faf-to
 - Public lobbies are listed on the front page. Private lobbies are link only. Toggle per lobby.
 - The creator is the host. If the host leaves, the crown moves to the next player automatically.
 - The host can kick players.
-- The lobby panel closes with its X or with Esc, so you can use the chat while waiting. The
-  **Lobby settings** button in the header brings it back.
+- **The lobby is a screen, not a dialog.** While a lobby is waiting there is no drawing board at
+  all: the middle column holds the lobby itself, with the player list and the chat either side,
+  so you can talk while you wait. The board only exists once a game is actually running, which
+  needs two players and the host pressing Start. There is nothing to dismiss and no way to end up
+  looking at an empty white board that is not a game.
 - Reloading the page or losing the connection rejoins the same seat with the same score for
   60 seconds. Reconnection is automatic, with backoff.
 - A lobby drops itself 60 seconds after the last player leaves, so empty lobbies never pile up
@@ -103,8 +106,10 @@ That is the Factions group's **always include** tag, and it is editable like eve
 - Strokes stream live over the WebSocket, batched every 50 ms.
 - The canvas is a fixed 900x560 logical surface, scaled to fit any screen. Everybody's canvas is
   identical regardless of window size or device pixel ratio.
-- The board grows to fill whatever space the window gives it, keeping the 900x560 ratio, so a
-  wide monitor gets a big canvas instead of a small one floating in the middle.
+- The board takes a share of the space the panels leave, keeping the 900x560 ratio. The share is
+  80% by default and adjustable from 40% to 100% in the display settings. It is measured against
+  the live size of its container, with a `ResizeObserver` behind it, so it can never grow over
+  the toolbar when the toolbar appears.
 - Anyone who joins mid-turn gets the full drawing replayed instantly.
 - Only the current drawer can draw. The server enforces it, the toolbar is simply hidden for
   everybody else.
@@ -118,12 +123,15 @@ chips are toggled. Each chip carries its own word count too. With nothing select
 
 ### Display settings
 
-The gear in the header opens a small panel with an **Interface size** slider, 70% to 160%. It
-scales the player list, chat, header and toolbar, and the drawing takes whatever is left over.
-The choice is per browser, remembered in `localStorage`, and affects nobody else in the lobby.
+The gear in the header opens a small panel with two sliders:
 
-The header sits above the lobby and scoreboard panels, so Leave, the Unit DB link and the gear
-stay reachable while one of those is open.
+- **Interface size**, 70% to 160%, scaling the player list, chat, header and toolbar.
+- **Drawing board**, 40% to 100% (default 80%), how much of the free space the white board takes.
+
+Both are per browser, remembered in `localStorage`, and affect nobody else in the lobby.
+
+The header sits above the scoreboard panel, so Leave, the Unit DB link and the gear stay
+reachable while it is open.
 
 ### Chat
 - Wrong guesses are visible to everyone.

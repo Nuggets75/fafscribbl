@@ -200,3 +200,8 @@ main{flex:1;display:grid;gap:10px;padding:10px;min-height:0;
 .poolinfo.empty{border-color:var(--bad)}
 .poolinfo.empty b{color:var(--bad)}
 .chip .n{opacity:.55;font-size:.85em;margin-left:4px}
+
+/* lobby screen (replaces the board while nobody is playing) */
+#lobbyPanel{flex:1;min-height:0;width:100%;overflow:auto;display:flex;
+  align-items:flex-start;justify-content:center;padding:2px}
+#lobbyPanel .ovbox{margin:auto}

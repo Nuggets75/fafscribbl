@@ -60,7 +60,6 @@
     <div class="hdr-right">
       <div class="codepill" id="codePill" title="Copy the invite link">Lobby <b id="codeText">-----</b></div>
       <a class="codepill" id="dbLink2" href="https://faforever.github.io/etfreeman-db/#/" target="_blank" rel="noopener">Unit DB</a>
-      <button class="small ghost hide" id="settingsBtn">Lobby settings</button>
       <button class="small ghost" id="skipBtn">Skip turn</button>
       <button class="small ghost" id="uiBtn" title="Display settings">&#9881;</button>
       <button class="small ghost" id="leaveBtn">Leave</button>
@@ -71,8 +70,10 @@
     <div class="uirow"><b>Display</b><button class="small ghost" id="uiClose">&#10005;</button></div>
     <label for="uiScale">Interface size <span id="uiScaleVal">100%</span></label>
     <input type="range" id="uiScale" min="70" max="160" step="5" value="100">
-    <p class="hint">Scales the player list, chat and toolbar. The drawing always fills the space
-    that is left.</p>
+    <p class="hint">Player list, chat, header and toolbar.</p>
+    <label for="uiBoard">Drawing board <span id="uiBoardVal">80%</span></label>
+    <input type="range" id="uiBoard" min="40" max="100" step="5" value="80">
+    <p class="hint">How much of the free space the white board takes up.</p>
     <button class="small ghost" id="uiReset">Reset to 100%</button>
   </div>
 
@@ -80,66 +81,8 @@
     <div class="panel"><div id="players"></div></div>
 
     <div class="panel" id="stage">
-      <div id="canvasArea">
-      <div id="canvasWrap">
-        <canvas id="board"></canvas>
-
-        <!-- word choice -->
-        <div class="ov hide" id="ovChoose">
-          <div class="ovbox">
-            <h2 id="chooseTitle">Choose a unit to draw</h2>
-            <p class="muted" id="chooseSub"></p>
-            <div class="choices" id="chooseList"></div>
-          </div>
-        </div>
-
-        <!-- turn end -->
-        <div class="ov hide" id="ovTurnEnd">
-          <div class="ovbox">
-            <h2>Turn over</h2>
-            <div class="revealword" id="revealWord"></div>
-            <div class="results" id="turnResults"></div>
-          </div>
-        </div>
-
-      </div>
-      </div>
-
-      <div id="tools" class="hide">
-        <div class="swatches" id="swatches"></div>
-        <div class="sizes" id="sizes"></div>
-        <div class="tool" id="toolPen" title="Pen">&#9998;</div>
-        <div class="tool" id="toolFill" title="Fill">&#9632;</div>
-        <div class="tool" id="toolEraser" title="Eraser">&#9633;</div>
-        <div class="tool" id="toolUndo" title="Undo">&#8630;</div>
-        <div class="tool" id="toolClear" title="Clear everything">&#10005;</div>
-      </div>
-    </div>
-
-    <div class="panel" id="chatpanel">
-      <div id="chatlog"></div>
-      <form id="chatform" autocomplete="off">
-        <input id="chatinput" maxlength="120" placeholder="Type your guess" autocomplete="off">
-        <button class="primary small" type="submit">Send</button>
-      </form>
-    </div>
-  </main>
-
-    <!-- game end -->
-    <div class="ov full hide" id="ovGameEnd">
+      <div id="lobbyPanel" class="hide">
       <div class="ovbox">
-        <button class="ovclose" id="closeGameEnd" title="Close (Esc)">&#10005;</button>
-        <h2>Game over</h2>
-        <div class="podium" id="podium"></div>
-        <div class="results" id="finalResults"></div>
-        <div style="margin-top:16px"><button class="primary" id="againBtn">Back to the lobby</button></div>
-      </div>
-    </div>
-
-    <!-- lobby -->
-    <div class="ov full hide" id="ovLobby">
-      <div class="ovbox">
-        <button class="ovclose" id="closeLobby" title="Close (Esc)">&#10005;</button>
         <h2>Lobby <span class="mono" id="lobbyCode"></span></h2>
         <p class="muted">Share the link, wait for players, then start.</p>
         <div class="inviteRow">
@@ -200,6 +143,62 @@
 
         <p class="hint" id="hostNote">Only the host can change the settings.</p>
         <button class="primary" id="startBtn" style="width:100%;margin-top:6px">Start the game</button>
+      </div>
+      </div>
+
+      <div id="canvasArea">
+      <div id="canvasWrap">
+        <canvas id="board"></canvas>
+
+        <!-- word choice -->
+        <div class="ov hide" id="ovChoose">
+          <div class="ovbox">
+            <h2 id="chooseTitle">Choose a unit to draw</h2>
+            <p class="muted" id="chooseSub"></p>
+            <div class="choices" id="chooseList"></div>
+          </div>
+        </div>
+
+        <!-- turn end -->
+        <div class="ov hide" id="ovTurnEnd">
+          <div class="ovbox">
+            <h2>Turn over</h2>
+            <div class="revealword" id="revealWord"></div>
+            <div class="results" id="turnResults"></div>
+          </div>
+        </div>
+
+      </div>
+      </div>
+
+      <div id="tools" class="hide">
+        <div class="swatches" id="swatches"></div>
+        <div class="sizes" id="sizes"></div>
+        <div class="tool" id="toolPen" title="Pen">&#9998;</div>
+        <div class="tool" id="toolFill" title="Fill">&#9632;</div>
+        <div class="tool" id="toolEraser" title="Eraser">&#9633;</div>
+        <div class="tool" id="toolUndo" title="Undo">&#8630;</div>
+        <div class="tool" id="toolClear" title="Clear everything">&#10005;</div>
+      </div>
+    </div>
+
+    <div class="panel" id="chatpanel">
+      <div id="chatlog"></div>
+      <form id="chatform" autocomplete="off">
+        <input id="chatinput" maxlength="120" placeholder="Type your guess" autocomplete="off">
+        <button class="primary small" type="submit">Send</button>
+      </form>
+    </div>
+  </main>
+
+    <!-- game end -->
+    <div class="ov full hide" id="ovGameEnd">
+      <div class="ovbox">
+        <button class="ovclose" id="closeGameEnd" title="Close (Esc)">&#10005;</button>
+        <h2>Game over</h2>
+        <div class="podium" id="podium"></div>
+        <div class="results" id="finalResults"></div>
+        <div style="margin-top:16px"><button class="primary" id="againBtn">Back to the lobby</button></div>
       </div>
     </div>
 

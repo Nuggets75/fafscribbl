@@ -13,7 +13,7 @@
   var cfg = { unitDb: 'https://faforever.github.io/etfreeman-db/#/', filterGroups: [], tagCounts: {}, defaults: null };
   var sock = null, wantOpen = false, retry = 0, retryTimer = null;
   var me = null, S = null, offset = 0, leaving = false;
-  var lobbyHidden = false, gameEndHidden = false, lastState = null;
+  var gameEndHidden = false, lastState = null;
   var pendingJoin = null;
 
   /* ---------------------------------------------------------------- utils */
@@ -59,10 +59,11 @@
   clearOff();
 
   // Keep the board as large as the panel allows while holding the 900x560 ratio exactly.
+  var boardPct = 80;
   function sizeCanvas() {
     var area = $('canvasArea');
-    if (!area || !area.clientWidth) return;
-    var scale = Math.min(area.clientWidth / LW, area.clientHeight / LH);
+    if (!area || !area.clientWidth || !area.clientHeight) return;
+    var scale = Math.min(area.clientWidth / LW, area.clientHeight / LH) * (boardPct / 100);
     if (!isFinite(scale) || scale <= 0) return;
     var wrap = $('canvasWrap');
     wrap.style.width = Math.floor(LW * scale) + 'px';
@@ -81,6 +82,10 @@
     bctx.drawImage(off, 0, 0, board.width, board.height);
   }
   window.addEventListener('resize', blit);
+  if (typeof ResizeObserver === 'function') {
+    var ro = new ResizeObserver(function () { sizeCanvas(); blit(); });
+    setTimeout(function () { var a = $('canvasArea'); if (a) ro.observe(a); }, 0);
+  }
 
   function hexToRgb(h) {
     h = String(h || '#000000').replace('#', '');
@@ -373,7 +378,7 @@
     } else if (S.state === 'turnend') {
       sub = 'the word was'; mask = S.word || '';
     } else if (S.state === 'lobby') {
-      sub = 'waiting for the host';
+      sub = isHost() ? 'set up the lobby, then start' : 'waiting for the host to start';
     }
     $('wordSub').textContent = sub;
     $('wordMask').textContent = mask.replace(/ /g, '   ');
@@ -415,6 +420,7 @@
     $('tools').classList.toggle('hide', !show);
     board.style.cursor = show ? 'crosshair' : 'default';
     if (show) buildTools();
+    sizeCanvas(); blit();
     var ci = $('chatinput');
     if (!S) return;
     if (S.state === 'drawing' && isDrawer()) ci.placeholder = 'You are drawing, do not give it away';
@@ -569,6 +575,14 @@
   $('skipBtn').onclick = function () { send({ t: 'skip' }); };
 
   /* --------- display settings --------- */
+  function applyBoard(pct) {
+    var v = Math.max(40, Math.min(100, Math.round(pct / 5) * 5));
+    boardPct = v;
+    $('uiBoard').value = String(v);
+    $('uiBoardVal').textContent = v + '%';
+    ls('fs_board', String(v));
+    sizeCanvas(); blit();
+  }
   function applyScale(pct) {
     var v = Math.max(70, Math.min(160, Math.round(pct / 5) * 5));
     document.documentElement.style.setProperty('--ui', String(v / 100));
@@ -578,8 +592,10 @@
     setTimeout(function () { sizeCanvas(); blit(); }, 0);
   }
   applyScale(Number(ls('fs_ui')) || 100);
+  applyBoard(Number(ls('fs_board')) || 80);
+  $('uiBoard').addEventListener('input', function () { applyBoard(Number($('uiBoard').value)); });
   $('uiScale').addEventListener('input', function () { applyScale(Number($('uiScale').value)); });
-  $('uiReset').onclick = function () { applyScale(100); };
+  $('uiReset').onclick = function () { applyScale(100); applyBoard(80); };
   $('uiBtn').onclick = function (e) {
     e.stopPropagation();
     $('uiPanel').classList.toggle('hide');
@@ -587,16 +603,13 @@
   $('uiClose').onclick = function () { $('uiPanel').classList.add('hide'); };
   $('uiPanel').addEventListener('click', function (e) { e.stopPropagation(); });
   document.addEventListener('click', function () { $('uiPanel').classList.add('hide'); });
-  $('settingsBtn').onclick = function () { lobbyHidden = false; renderOverlays(); renderLobby(); };
-  $('closeLobby').onclick = function () { lobbyHidden = true; renderOverlays(); };
   $('closeGameEnd').onclick = function () { gameEndHidden = true; renderOverlays(); };
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     if (!$('uiPanel').classList.contains('hide')) { $('uiPanel').classList.add('hide'); return; }
     if (!S) return;
     if (e.target && /input|textarea/i.test(e.target.tagName)) return;
-    if (S.state === 'lobby' && !lobbyHidden) { lobbyHidden = true; renderOverlays(); }
-    else if (S.state === 'gameend' && !gameEndHidden) { gameEndHidden = true; renderOverlays(); }
+    if (S.state === 'gameend' && !gameEndHidden) { gameEndHidden = true; renderOverlays(); }
   });
   $('leaveBtn').onclick = function () {
     if (!confirm('Leave the lobby?')) return;
@@ -607,12 +620,12 @@
   /* --------- overlays --------- */
   function renderOverlays() {
     if (!S) return;
-    if (S.state !== lastState) {
-      if (S.state === 'lobby') lobbyHidden = false;
-      lastState = S.state;
-    }
-    $('settingsBtn').classList.toggle('hide', S.state !== 'lobby');
-    $('ovLobby').classList.toggle('hide', S.state !== 'lobby' || lobbyHidden);
+    lastState = S.state;
+    // The board only exists once a game is running. In the lobby the stage IS the lobby.
+    var inLobby = S.state === 'lobby';
+    $('lobbyPanel').classList.toggle('hide', !inLobby);
+    $('canvasArea').classList.toggle('hide', inLobby);
+    if (!inLobby) setTimeout(function () { sizeCanvas(); blit(); }, 0);
     if (S.state !== 'choosing') hideChoices();
     if (S.state !== 'turnend') $('ovTurnEnd').classList.add('hide');
     if (S.state !== 'gameend') $('ovGameEnd').classList.add('hide');
