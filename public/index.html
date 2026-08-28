@@ -62,8 +62,10 @@
 <!-- ------------------------------------------------ game ---------------- -->
 <div id="game" class="hide">
   <header>
-    <div class="brand">faf<span>scribbl</span></div>
-    <div class="roundbox" id="roundBox">Lobby</div>
+    <div class="hdr-left">
+      <div class="brand">faf<span>scribbl</span></div>
+      <div class="roundbox" id="roundBox">Lobby</div>
+    </div>
     <div class="wordbox">
       <div class="sub" id="wordSub">waiting</div>
       <div class="mask" id="wordMask"></div>
@@ -78,12 +80,22 @@
     </div>
   </header>
 
+  <div id="timerBand" class="hide"><span id="timer">-</span></div>
+
   <div id="sndPanel" class="hide">
     <div class="uirow"><b>Sound</b><button class="small ghost" id="sndClose">&#10005;</button></div>
     <label><input type="checkbox" id="sndOn" style="width:auto"> Sound effects on</label>
     <label for="sndVol" style="margin-top:8px">Volume <span id="sndVolVal">60%</span></label>
     <input type="range" id="sndVol" min="0" max="100" step="5" value="60">
-    <p class="hint">Guesses, the end of a turn, and the clock at 30, 20 and the last 5 seconds.</p>
+    <div class="sfxlist">
+      <label><input type="checkbox" class="sfx" data-sfx="guessSelf"> You guess correctly</label>
+      <label><input type="checkbox" class="sfx" data-sfx="guessOther"> Somebody else guesses</label>
+      <label><input type="checkbox" class="sfx" data-sfx="turnStart"> A new turn starts</label>
+      <label><input type="checkbox" class="sfx" data-sfx="turnEnd"> End of a turn</label>
+      <label><input type="checkbox" class="sfx" data-sfx="gameEnd"> End of the game</label>
+      <label><input type="checkbox" class="sfx" data-sfx="clockMark"> Clock at 30 and 20 seconds</label>
+      <label><input type="checkbox" class="sfx" data-sfx="clockCount"> Final 5 second countdown</label>
+    </div>
     <button class="small ghost" id="sndTest">Play a test sound</button>
   </div>
 
@@ -109,7 +121,6 @@
     </div>
 
     <div class="panel" id="stage">
-      <div id="timerBand" class="hide"><span id="timer">-</span></div>
       <div id="lobbyPanel" class="hide">
       <div class="ovbox">
         <h2>Lobby <span class="mono" id="lobbyCode"></span></h2>

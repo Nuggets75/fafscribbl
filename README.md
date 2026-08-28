@@ -118,9 +118,11 @@ That is the Factions group's **always include** tag, and it is editable like eve
   the toolbar when the toolbar appears.
 - **The drawer gets a reference picture.** Every unit word carries the in-game build icon, shown
   under each option on the pick screen and then in a small floating panel while drawing. The
-  panel can be dragged anywhere, resized, hidden and brought back with the eye button in the
-  toolbar. It is per browser and only the drawer ever sees it. The picture also appears on the
-  reveal screen once the word is out.
+  panel parks itself in the empty gutter beside the board when there is one, and can be dragged
+  anywhere, resized, hidden and brought back with the eye button in the toolbar. Only its title
+  bar takes pointer events, so you can draw straight through the picture if it is over the board.
+  It is per browser and only the drawer ever sees it. The picture also appears on the reveal
+  screen once the word is out.
 - Anyone who joins mid-turn gets the full drawing replayed instantly.
 - Only the current drawer can draw. The server enforces it, the toolbar is simply hidden for
   everybody else.
@@ -147,7 +149,7 @@ chips are toggled. Each chip carries its own word count too. With nothing select
 
 ### The unit look-up
 
-A search box sits under the player list, always visible, no button to press. Type a description
+A search box sits at the bottom of the left column, always visible, no button to press. Type a description
 in any order, "aeon t1 scout" or "scout t1 aeon", and it lists the units whose admin note and tags
 contain all of those words, with their pictures. It is there so people learn unit names instead of
 having to go and look them up every time.
@@ -160,15 +162,24 @@ The host can switch it off per lobby.
 
 ### Sound
 
-The speaker in the header opens a volume slider and an on/off switch, both remembered per browser.
-Every sound is generated with the Web Audio API, so there are no audio files to ship or load:
+The speaker in the header opens a volume slider, a master on/off, and a switch for each effect
+on its own, all remembered per browser. Ticking one plays it, so you can hear what you are
+turning on. Every sound is generated with the Web Audio API, so there are no audio files to ship
+or load:
 
-- a rising two-note chime when you guess correctly, and a quieter blip when somebody else does
-- a short descending phrase at the end of a turn, and a fanfare at the end of the game
-- the clock: one tone at 30 and 20 seconds, then a sharper one at each of the last five
+| Effect | Sound |
+|---|---|
+| You guess correctly | rising two-note chime |
+| Somebody else guesses | short quiet blip |
+| A new turn starts | two-note lift |
+| End of a turn | short descending phrase |
+| End of the game | four-note fanfare |
+| Clock at 30 and 20 seconds | single soft tone |
+| Final 5 second countdown | sharper tone on each of 5, 4, 3, 2, 1 |
 
-The clock itself sits between the word and the board, large, and turns red and pulses at
-10 seconds.
+The clock sits directly under the word, on the same centre line, and turns red and pulses at
+10 seconds. The header is a three column grid so the word block is always on the page centre
+whatever the sides weigh, which is what keeps the two aligned at any interface size.
 
 ### Display settings
 

@@ -625,6 +625,14 @@
 
   /* --------- sound --------- */
   var AC = null, sndGain = null;
+  var SFX_KEYS = ['guessSelf', 'guessOther', 'turnStart', 'turnEnd', 'gameEnd', 'clockMark', 'clockCount'];
+  var sfxOn = {};
+  (function loadSfx() {
+    var raw = null;
+    try { raw = JSON.parse(ls('fs_sfx') || 'null'); } catch (e) { raw = null; }
+    SFX_KEYS.forEach(function (k) { sfxOn[k] = !raw || raw[k] !== false; });
+  })();
+  function saveSfx() { ls('fs_sfx', JSON.stringify(sfxOn)); }
   var sndOn = ls('fs_snd') !== '0';
   var sndVol = ls('fs_vol') === null ? 60 : Math.max(0, Math.min(100, Number(ls('fs_vol'))));
   function audio() {
@@ -653,14 +661,15 @@
     osc.connect(g); g.connect(sndGain);
     osc.start(t0); osc.stop(t0 + dur + 0.02);
   }
+  // Each effect checks its own switch, so any one of them can be silenced on its own.
   var SFX = {
-    correct: function () { tone(784, 0, 0.11, 'sine', 0.5); tone(1175, 0.09, 0.16, 'sine', 0.45); },
-    guessed: function () { tone(660, 0, 0.07, 'sine', 0.3); },
-    turnEnd: function () { tone(659, 0, 0.13, 'triangle', 0.4); tone(523, 0.12, 0.13, 'triangle', 0.4); tone(392, 0.24, 0.26, 'triangle', 0.4); },
-    gameEnd: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, i * 0.11, 0.22, 'triangle', 0.42); }); },
-    mark: function () { tone(700, 0, 0.14, 'sine', 0.4); },
-    count: function (n) { tone(n <= 1 ? 1100 : 880, 0, 0.1, 'square', 0.32); },
-    turnStart: function () { tone(523, 0, 0.09, 'sine', 0.35); tone(784, 0.08, 0.14, 'sine', 0.35); }
+    correct: function () { if (!sfxOn.guessSelf) return; tone(784, 0, 0.11, 'sine', 0.5); tone(1175, 0.09, 0.16, 'sine', 0.45); },
+    guessed: function () { if (!sfxOn.guessOther) return; tone(660, 0, 0.07, 'sine', 0.3); },
+    turnEnd: function () { if (!sfxOn.turnEnd) return; tone(659, 0, 0.13, 'triangle', 0.4); tone(523, 0.12, 0.13, 'triangle', 0.4); tone(392, 0.24, 0.26, 'triangle', 0.4); },
+    gameEnd: function () { if (!sfxOn.gameEnd) return; [523, 659, 784, 1047].forEach(function (f, i) { tone(f, i * 0.11, 0.22, 'triangle', 0.42); }); },
+    mark: function () { if (!sfxOn.clockMark) return; tone(700, 0, 0.14, 'sine', 0.4); },
+    count: function (n) { if (!sfxOn.clockCount) return; tone(n <= 1 ? 1100 : 880, 0, 0.1, 'square', 0.32); },
+    turnStart: function () { if (!sfxOn.turnStart) return; tone(523, 0, 0.09, 'sine', 0.35); tone(784, 0.08, 0.14, 'sine', 0.35); }
   };
   function applyVol() {
     if (sndGain) sndGain.gain.value = sndVol / 100;
@@ -668,9 +677,25 @@
     $('sndVolVal').textContent = sndVol + '%';
     $('sndOn').checked = sndOn;
     $('sndBtn').classList.toggle('off', !sndOn || sndVol === 0);
+    Array.prototype.forEach.call(document.querySelectorAll('.sfx'), function (cb) {
+      cb.checked = !!sfxOn[cb.dataset.sfx];
+      cb.disabled = !sndOn;
+    });
     ls('fs_vol', String(sndVol));
     ls('fs_snd', sndOn ? '1' : '0');
   }
+  Array.prototype.forEach.call(document.querySelectorAll('.sfx'), function (cb) {
+    cb.addEventListener('change', function () {
+      sfxOn[cb.dataset.sfx] = cb.checked;
+      saveSfx();
+      applyVol();
+      if (!cb.checked) return;
+      var demo = { guessSelf: SFX.correct, guessOther: SFX.guessed, turnStart: SFX.turnStart,
+        turnEnd: SFX.turnEnd, gameEnd: SFX.gameEnd, clockMark: SFX.mark,
+        clockCount: function () { SFX.count(3); } }[cb.dataset.sfx];
+      if (demo) { audio(); demo(); }
+    });
+  });
   $('sndBtn').onclick = function (e) {
     e.stopPropagation();
     audio();
@@ -688,6 +713,7 @@
 
   /* --------- the drawer's reference picture --------- */
   var refWidth = Number(ls('fs_ref_w')) || 180;
+  var refPlaced = false;
   function refAvailable() { return !!(S && S.wordIcon); }
   function applyRefWidth(px) {
     refWidth = Math.max(90, Math.min(420, Math.round(px)));
@@ -710,8 +736,20 @@
       var src = '/icons/' + S.wordIcon;
       if ($('refImg').getAttribute('src') !== src) $('refImg').src = src;
       applyRefWidth(refWidth);
+      placeRef();
       clampRef();
     }
+  }
+  // Park it in the empty gutter beside the board when there is one, rather than on top
+  // of the drawing. Once the player drags it, their position is kept.
+  function placeRef() {
+    if (refPlaced) return;
+    var stage = $('stage'), wrap = $('canvasWrap'), panel = $('refPanel');
+    if (!stage || !wrap || !wrap.offsetWidth) return;
+    var gutter = (stage.clientWidth - wrap.offsetWidth) / 2;
+    panel.style.left = (gutter >= panel.offsetWidth + 16 ? Math.max(6, (gutter - panel.offsetWidth) / 2) : 10) + 'px';
+    panel.style.top = '12px';
+    refPlaced = true;
   }
   function clampRef() {
     var stage = $('stage'), panel = $('refPanel');
@@ -719,7 +757,7 @@
     var maxL = Math.max(0, stage.clientWidth - panel.offsetWidth - 4);
     var maxT = Math.max(0, stage.clientHeight - panel.offsetHeight - 4);
     panel.style.left = Math.max(0, Math.min(maxL, parseInt(panel.style.left || '10', 10))) + 'px';
-    panel.style.top = Math.max(0, Math.min(maxT, parseInt(panel.style.top || '64', 10))) + 'px';
+    panel.style.top = Math.max(0, Math.min(maxT, parseInt(panel.style.top || '12', 10))) + 'px';
   }
   $('toolRef').onclick = function () { showRef(ls('fs_ref') === '0'); };
   $('refClose').onclick = function () { showRef(false); };
@@ -731,7 +769,8 @@
     var start = null;
     bar.addEventListener('pointerdown', function (e) {
       if (e.target.tagName === 'BUTTON') return;
-      start = { x: e.clientX, y: e.clientY, l: parseInt(panel.style.left || '10', 10), t: parseInt(panel.style.top || '64', 10) };
+      refPlaced = true;
+      start = { x: e.clientX, y: e.clientY, l: parseInt(panel.style.left || '10', 10), t: parseInt(panel.style.top || '12', 10) };
       try { bar.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
       e.preventDefault();
     });
