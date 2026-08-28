@@ -13,7 +13,7 @@
   var cfg = { unitDb: 'https://faforever.github.io/etfreeman-db/#/', filterGroups: [], tagCounts: {}, defaults: null };
   var sock = null, wantOpen = false, retry = 0, retryTimer = null;
   var me = null, S = null, offset = 0, leaving = false;
-  var gameEndHidden = false, lastState = null;
+  var gameEndHidden = false, lastState = null, lastCorrect = 0;
   var pendingJoin = null;
 
   /* ---------------------------------------------------------------- utils */
@@ -281,8 +281,10 @@
     if (leaving || !wantOpen) return;
     retry++;
     if (!S && retry >= 3) {
-      $('homeErr').innerHTML = 'Could not open a connection to the server. If the site sits behind ' +
+      var msg = 'Could not open a connection to the server. If the site sits behind ' +
         'Nginx Proxy Manager, switch on <b>Websockets Support</b> for this host.';
+      $('homeErr').innerHTML = msg;
+      $('joinErr').innerHTML = msg;
     }
     var wait = Math.min(8000, 500 * Math.pow(1.6, retry));
     retryTimer = setTimeout(function () {
@@ -310,7 +312,8 @@
         break;
       case 'error':
         if (!S) {
-          $('homeErr').textContent = m.message || 'Could not join';
+          var onCard = !$('joinCard').classList.contains('hide');
+          $(onCard ? 'joinErr' : 'homeErr').textContent = m.message || 'Could not join';
           disconnect();
         } else toast(m.message || 'Error');
         break;
@@ -341,16 +344,25 @@
         if (!S) return;
         S.settings = m.settings;
         if (typeof m.poolSize === 'number') S.poolSize = m.poolSize;
-        renderLobby(); renderHeader();
+        renderLobby(); renderHeader(); renderLookup();
         break;
-      case 'chat': addChat(m); break;
+      case 'chat':
+        // your own correct guess already played the bigger sound, do not double it up
+        if (m.kind === 'good' && / guessed the word$/.test(m.text || '') && Date.now() - lastCorrect > 600) SFX.guessed();
+        addChat(m);
+        break;
       case 'draw': (m.ops || []).forEach(applyOp); blit(); break;
       case 'canvas': rebuild(m.ops || []); break;
       case 'mask': if (S) { S.mask = m.mask; renderHeader(); } break;
-      case 'reveal': if (S) { S.word = m.word; S.mask = m.word; renderHeader(); } break;
-      case 'choices': window.__choiceIcons = m.icons || []; showChoices(m.words, m.hints); break;
+      case 'reveal':
+        if (S) { S.word = m.word; S.mask = m.word; renderHeader(); }
+        lastCorrect = Date.now();
+        SFX.correct();
+        break;
+      case 'choices': window.__choiceIcons = m.icons || []; SFX.turnStart(); showChoices(m.words, m.hints); break;
       case 'turnend': showTurnEnd(m); break;
       case 'gameend': showGameEnd(m); break;
+      case 'lookup': showLookup(m); break;
       case 'pong': offset = m.now - Date.now(); break;
       default: break;
     }
@@ -358,7 +370,7 @@
 
   /* ------------------------------------------------------------- render */
   function renderAll() {
-    renderHeader(); renderPlayers(); renderLobby(); renderOverlays(); renderToolbar();
+    renderHeader(); renderPlayers(); renderLobby(); renderOverlays(); renderToolbar(); renderLookup();
   }
 
   function renderHeader() {
@@ -512,6 +524,7 @@
     $('setChoices').value = String(s.wordChoices);
     $('setHints').value = String(s.hints ? s.hintCount : 0);
     $('setPublic').value = s.isPublic ? '1' : '0';
+    $('setLookup').value = s.lookup === false ? '0' : '1';
     if (document.activeElement !== $('setCustom')) $('setCustom').value = s.customWords || '';
     $('setCustomOnly').checked = !!s.customWordsOnly;
     var tf = s.tagFilters || {};
@@ -521,7 +534,7 @@
     renderPoolInfo();
 
     var host = isHost();
-    ['setRounds', 'setTime', 'setMax', 'setChoices', 'setHints', 'setPublic', 'setCustom', 'setCustomOnly'].forEach(function (id) {
+    ['setRounds', 'setTime', 'setMax', 'setChoices', 'setHints', 'setPublic', 'setLookup', 'setCustom', 'setCustomOnly'].forEach(function (id) {
       $(id).disabled = !host;
     });
     $('hostNote').textContent = host
@@ -578,13 +591,14 @@
       hints: hints > 0,
       hintCount: hints > 0 ? hints : 1,
       isPublic: $('setPublic').value === '1',
+      lookup: $('setLookup').value === '1',
       customWords: $('setCustom').value,
       customWordsOnly: $('setCustomOnly').checked,
       tagFilters: tagFilters
     };
   }
   function pushSettings() { if (isHost()) send({ t: 'settings', settings: collectSettings() }); }
-  ['setRounds', 'setTime', 'setMax', 'setChoices', 'setHints', 'setPublic', 'setCustomOnly'].forEach(function (id) {
+  ['setRounds', 'setTime', 'setMax', 'setChoices', 'setHints', 'setPublic', 'setLookup', 'setCustomOnly'].forEach(function (id) {
     $(id).addEventListener('change', pushSettings);
   });
   $('setCustom').addEventListener('blur', pushSettings);
@@ -608,6 +622,69 @@
     else prompt('Copy this link', text);
   }
   $('skipBtn').onclick = function () { send({ t: 'skip' }); };
+
+  /* --------- sound --------- */
+  var AC = null, sndGain = null;
+  var sndOn = ls('fs_snd') !== '0';
+  var sndVol = ls('fs_vol') === null ? 60 : Math.max(0, Math.min(100, Number(ls('fs_vol'))));
+  function audio() {
+    if (AC) { if (AC.state === 'suspended') AC.resume(); return AC; }
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    try { AC = new Ctx(); } catch (e) { return null; }
+    sndGain = AC.createGain();
+    sndGain.gain.value = sndVol / 100;
+    sndGain.connect(AC.destination);
+    return AC;
+  }
+  // One short shaped tone. Everything below is built out of these, so there are no audio
+  // files to ship and nothing to load before the first round.
+  function tone(freq, at, dur, type, level) {
+    var ctx = audio();
+    if (!ctx || !sndOn) return;
+    var t0 = ctx.currentTime + at;
+    var osc = ctx.createOscillator();
+    var g = ctx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(level || 0.5, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g); g.connect(sndGain);
+    osc.start(t0); osc.stop(t0 + dur + 0.02);
+  }
+  var SFX = {
+    correct: function () { tone(784, 0, 0.11, 'sine', 0.5); tone(1175, 0.09, 0.16, 'sine', 0.45); },
+    guessed: function () { tone(660, 0, 0.07, 'sine', 0.3); },
+    turnEnd: function () { tone(659, 0, 0.13, 'triangle', 0.4); tone(523, 0.12, 0.13, 'triangle', 0.4); tone(392, 0.24, 0.26, 'triangle', 0.4); },
+    gameEnd: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, i * 0.11, 0.22, 'triangle', 0.42); }); },
+    mark: function () { tone(700, 0, 0.14, 'sine', 0.4); },
+    count: function (n) { tone(n <= 1 ? 1100 : 880, 0, 0.1, 'square', 0.32); },
+    turnStart: function () { tone(523, 0, 0.09, 'sine', 0.35); tone(784, 0.08, 0.14, 'sine', 0.35); }
+  };
+  function applyVol() {
+    if (sndGain) sndGain.gain.value = sndVol / 100;
+    $('sndVol').value = String(sndVol);
+    $('sndVolVal').textContent = sndVol + '%';
+    $('sndOn').checked = sndOn;
+    $('sndBtn').classList.toggle('off', !sndOn || sndVol === 0);
+    ls('fs_vol', String(sndVol));
+    ls('fs_snd', sndOn ? '1' : '0');
+  }
+  $('sndBtn').onclick = function (e) {
+    e.stopPropagation();
+    audio();
+    $('uiPanel').classList.add('hide');
+    $('sndPanel').classList.toggle('hide');
+  };
+  $('sndClose').onclick = function () { $('sndPanel').classList.add('hide'); };
+  $('sndPanel').addEventListener('click', function (e) { e.stopPropagation(); });
+  $('sndVol').addEventListener('input', function () { sndVol = Number($('sndVol').value); applyVol(); });
+  $('sndVol').addEventListener('change', function () { SFX.guessed(); });
+  $('sndOn').addEventListener('change', function () { sndOn = $('sndOn').checked; applyVol(); if (sndOn) SFX.correct(); });
+  $('sndTest').onclick = function () { audio(); SFX.correct(); };
+  applyVol();
+  document.addEventListener('pointerdown', function () { audio(); }, { once: true });
 
   /* --------- the drawer's reference picture --------- */
   var refWidth = Number(ls('fs_ref_w')) || 180;
@@ -641,8 +718,8 @@
     if (!stage || panel.classList.contains('hide')) return;
     var maxL = Math.max(0, stage.clientWidth - panel.offsetWidth - 4);
     var maxT = Math.max(0, stage.clientHeight - panel.offsetHeight - 4);
-    panel.style.left = Math.max(0, Math.min(maxL, parseInt(panel.style.left || '12', 10))) + 'px';
-    panel.style.top = Math.max(0, Math.min(maxT, parseInt(panel.style.top || '12', 10))) + 'px';
+    panel.style.left = Math.max(0, Math.min(maxL, parseInt(panel.style.left || '10', 10))) + 'px';
+    panel.style.top = Math.max(0, Math.min(maxT, parseInt(panel.style.top || '64', 10))) + 'px';
   }
   $('toolRef').onclick = function () { showRef(ls('fs_ref') === '0'); };
   $('refClose').onclick = function () { showRef(false); };
@@ -654,7 +731,7 @@
     var start = null;
     bar.addEventListener('pointerdown', function (e) {
       if (e.target.tagName === 'BUTTON') return;
-      start = { x: e.clientX, y: e.clientY, l: parseInt(panel.style.left || '12', 10), t: parseInt(panel.style.top || '12', 10) };
+      start = { x: e.clientX, y: e.clientY, l: parseInt(panel.style.left || '10', 10), t: parseInt(panel.style.top || '64', 10) };
       try { bar.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
       e.preventDefault();
     });
@@ -692,15 +769,20 @@
   $('uiReset').onclick = function () { applyScale(100); applyBoard(80); };
   $('uiBtn').onclick = function (e) {
     e.stopPropagation();
+    $('sndPanel').classList.add('hide');
     $('uiPanel').classList.toggle('hide');
   };
   $('uiClose').onclick = function () { $('uiPanel').classList.add('hide'); };
   $('uiPanel').addEventListener('click', function (e) { e.stopPropagation(); });
-  document.addEventListener('click', function () { $('uiPanel').classList.add('hide'); });
+  document.addEventListener('click', function () {
+    $('uiPanel').classList.add('hide');
+    $('sndPanel').classList.add('hide');
+  });
   $('closeGameEnd').onclick = function () { gameEndHidden = true; renderOverlays(); };
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     if (!$('uiPanel').classList.contains('hide')) { $('uiPanel').classList.add('hide'); return; }
+    if (!$('sndPanel').classList.contains('hide')) { $('sndPanel').classList.add('hide'); return; }
     if (!S) return;
     if (e.target && /input|textarea/i.test(e.target.tagName)) return;
     if (S.state === 'gameend' && !gameEndHidden) { gameEndHidden = true; renderOverlays(); }
@@ -774,6 +856,7 @@
     $('ovChoose').classList.remove('hide');
   }
   function showTurnEnd(m) {
+    SFX.turnEnd();
     if (S) { S.state = 'turnend'; S.word = m.word; S.endsAt = m.endsAt; }
     hideChoices();
     var ri = $('revealIcon');
@@ -793,6 +876,7 @@
     renderHeader();
   }
   function showGameEnd(m) {
+    SFX.gameEnd();
     gameEndHidden = false;
     if (S) { S.state = 'gameend'; S.endsAt = m.endsAt; }
     hideChoices();
@@ -821,6 +905,55 @@
     $('againBtn').disabled = !isHost();
     $('ovGameEnd').classList.remove('hide');
     renderHeader();
+  }
+
+  /* --------- unit look-up --------- */
+  var lkTimer = null;
+  function lookupEnabled() { return !!(S && S.settings && S.settings.lookup); }
+  function renderLookup() {
+    $('lookup').classList.toggle('hide', !lookupEnabled());
+  }
+  function runLookup() {
+    var q = $('lkInput').value.trim();
+    if (!q) {
+      $('lkResults').innerHTML = '<p class="lkhint">Describe a unit and this finds its name. Order does not matter.</p>';
+      return;
+    }
+    send({ t: 'lookup', q: q });
+  }
+  $('lkInput').addEventListener('input', function () {
+    clearTimeout(lkTimer);
+    lkTimer = setTimeout(runLookup, 180);
+  });
+  $('lkInput').addEventListener('keydown', function (e) {
+    e.stopPropagation();
+    if (e.key === 'Enter') { clearTimeout(lkTimer); runLookup(); }
+  });
+  function showLookup(m) {
+    var box = $('lkResults');
+    if (m.off) { box.innerHTML = '<p class="lkhint">The look-up is switched off in this lobby.</p>'; return; }
+    if ($('lkInput').value.trim() !== m.q) return;
+    if (!m.results.length) {
+      box.innerHTML = '<p class="lkhint">Nothing matches all of those words.</p>';
+      return;
+    }
+    box.innerHTML = '';
+    m.results.forEach(function (r) {
+      var row = document.createElement('div');
+      row.className = 'lkrow';
+      if (r.icon) {
+        var im = document.createElement('img');
+        im.src = '/icons/' + r.icon;
+        im.alt = '';
+        im.loading = 'lazy';
+        row.appendChild(im);
+      }
+      var t = document.createElement('div');
+      t.className = 't';
+      t.innerHTML = '<div class="n">' + esc(r.word) + '</div><div class="h" title="' + esc(r.hint) + '">' + esc(r.hint) + '</div>';
+      row.appendChild(t);
+      box.appendChild(row);
+    });
   }
 
   /* --------- chat --------- */
@@ -859,15 +992,32 @@
   });
 
   /* --------- timer --------- */
+  var lastLeft = null;
+  var BEEP_AT = [30, 20, 5, 4, 3, 2, 1];
   setInterval(function () {
     var el = $('timer');
-    if (!S) { el.textContent = '-'; return; }
-    if (S.state === 'lobby') { el.textContent = '-'; el.classList.remove('low'); return; }
-    if (!S.endsAt) { el.innerHTML = '&#8734;'; el.classList.remove('low'); return; }
+    var band = $('timerBand');
+    if (!S || S.state === 'lobby') {
+      band.classList.add('hide');
+      el.classList.remove('low');
+      lastLeft = null;
+      return;
+    }
+    band.classList.remove('hide');
+    if (!S.endsAt) {
+      el.innerHTML = '&#8734;';
+      el.classList.remove('low');
+      lastLeft = null;
+      return;
+    }
     var left = Math.max(0, Math.ceil((S.endsAt - now()) / 1000));
     el.textContent = left;
     el.classList.toggle('low', S.state === 'drawing' && left <= 10);
-  }, 250);
+    if (S.state === 'drawing' && lastLeft !== null && left < lastLeft && BEEP_AT.indexOf(left) !== -1) {
+      if (left > 10) SFX.mark(); else SFX.count(left);
+    }
+    lastLeft = left;
+  }, 200);
   setInterval(function () { if (sock && sock.readyState === 1) send({ t: 'ping' }); }, 20000);
 
   /* ------------------------------------------------------------- home */
@@ -920,6 +1070,33 @@
     $('homeErr').textContent = '';
     connect({ name: n, code: code });
   }
+
+  // Someone opening an invite link should only ever be asked for a name. The full menu,
+  // and in particular the Create button, is out of the way until they ask for it.
+  function showJoinCard(code) {
+    $('joinCode').textContent = code;
+    $('joinCard').classList.remove('hide');
+    $('homeCard').classList.add('hide');
+    var saved = ls('fs_name');
+    if (saved) $('joinName').value = saved;
+    setTimeout(function () { $('joinName').focus(); $('joinName').select(); }, 30);
+  }
+  function joinFromCard() {
+    var n = $('joinName').value.trim();
+    if (!n) { $('joinErr').textContent = 'Type a name first.'; $('joinName').focus(); return; }
+    ls('fs_name', n);
+    $('joinErr').textContent = '';
+    connect({ name: n, code: $('joinCode').textContent.trim() });
+  }
+  $('joinNowBtn').onclick = joinFromCard;
+  $('joinName').addEventListener('keydown', function (e) { if (e.key === 'Enter') joinFromCard(); });
+  $('toMenu').onclick = function (e) {
+    e.preventDefault();
+    $('joinCard').classList.add('hide');
+    $('homeCard').classList.remove('hide');
+    history.replaceState({}, '', '/');
+    $('nameInput').focus();
+  };
   function doCreate() {
     var n = nameValue();
     if (!n) return;
@@ -936,10 +1113,14 @@
   var saved = ls('fs_name');
   if (saved) $('nameInput').value = saved;
   var urlCode = codeFromUrl();
-  if (urlCode) $('codeInput').value = urlCode;
   loadConfig();
   loadRooms();
   setInterval(loadRooms, 8000);
-  if (urlCode && saved) doJoin();
-  else $('nameInput').focus();
+  if (urlCode) {
+    $('codeInput').value = urlCode;
+    if (saved) connect({ name: saved, code: urlCode });
+    else showJoinCard(urlCode);
+  } else {
+    $('nameInput').focus();
+  }
 })();

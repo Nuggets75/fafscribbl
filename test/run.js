@@ -765,6 +765,71 @@ async function extraTests() {
   // restore the shipped groups for the rest of the run
   await api('/api/admin/filters', { method: 'POST', body: JSON.stringify({ groups: before }) }, adminToken);
 
+  // the unit look-up searches notes and tags, in any order, and never returns maps
+  const lu1 = await join('Look', { create: true });
+  const lu2 = await join('Look2', { code: lu1.code });
+  await sleep(200);
+  const ask = async (q) => {
+    lu1.clear();
+    lu1.send({ t: 'lookup', q: q });
+    return lu1.wait((m) => m.t === 'lookup', 3000);
+  };
+  const r1 = await ask('aeon t1 air scout');
+  ok(r1.results.some((r) => r.word === 'Mirage'), 'a description finds the unit: ' + r1.results.map((r) => r.word).join(', '));
+  const r2 = await ask('scout t1 aeon air');
+  eq(r2.results.map((r) => r.word).sort().join(','), r1.results.map((r) => r.word).sort().join(','),
+    'word order does not matter');
+  const r3 = await ask('AEON T1 AIR SCOUT');
+  eq(r3.results.length, r1.results.length, 'case does not matter either');
+  ok(r1.results.every((r) => typeof r.icon === 'string'), 'results carry the picture too');
+  const r4 = await ask('uef');
+  ok(r4.results.length <= 14, 'results are capped at 14, got ' + r4.results.length);
+  const r5 = await ask('zzzznothing');
+  eq(r5.results.length, 0, 'a miss returns nothing');
+  const r6 = await ask('');
+  eq(r6.results.length, 0, 'an empty query returns nothing rather than the whole list');
+
+  // maps must never be findable through it
+  await api('/api/admin/words/import', {
+    method: 'POST', body: JSON.stringify({ text: 'Lookup Test Map | a 10x10 duel map | | map, easy maps' })
+  }, adminToken);
+  const r7 = await ask('duel map');
+  ok(!r7.results.some((r) => /Lookup Test Map/.test(r.word)), 'a map is never returned by the look-up');
+  const r8 = await ask('easy maps');
+  eq(r8.results.length, 0, 'and neither is its difficulty tag');
+
+  lu1.send({ t: 'settings', settings: { lookup: false } });
+  await lu1.wait((m) => m.t === 'settings', 3000);
+  const off = await ask('aeon t1 air scout');
+  ok(off.off === true && off.results.length === 0, 'the host can switch the look-up off');
+  lu1.close(); lu2.close();
+  await sleep(200);
+
+  // long names earn more letter hints than short ones
+  const hintsFor = async (label, only, expectAtLeast) => {
+    const h1 = await join('Hint' + label, { create: true, settings: { wordChoices: 1, drawTime: 16, hints: true, hintCount: 2, rounds: 1, customWords: only, customWordsOnly: true } });
+    const h2 = await join('Hint' + label + 'b', { code: h1.code });
+    await sleep(150);
+    h1.send({ t: 'start' });
+    const st2 = await h1.wait((m) => m.t === 'state' && m.state === 'drawing', 6000);
+    const g = st2.drawerId === h1.id ? h2 : h1;
+    let masks = 0;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 15000 && masks < expectAtLeast) {
+      const seen = g.all((m) => m.t === 'mask').length;
+      if (seen > masks) masks = seen;
+      if (masks >= expectAtLeast) break;
+      await sleep(200);
+    }
+    h1.close(); h2.close();
+    await sleep(200);
+    return masks;
+  };
+  const shortHints = await hintsFor('Short', 'Wasp', 2);
+  eq(shortHints, 2, 'a four letter word gets the configured two hints');
+  const longHints = await hintsFor('Long', 'Stealth Field Generator', 4);
+  eq(longHints, 4, 'a 21 letter name gets four, one per five letters');
+
   // host leaving hands the crown over
   const o1 = await join('Owner', { create: true });
   const o2 = await join('Heir', { code: o1.code });

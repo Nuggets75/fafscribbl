@@ -12,7 +12,19 @@
 
 <!-- ------------------------------------------------ home ---------------- -->
 <div id="home">
-  <div class="home-card">
+  <div class="join-card card hide" id="joinCard">
+    <h1 class="logo">faf<span>scribbl</span></h1>
+    <p class="tagline">You have been invited to lobby <b class="mono" id="joinCode"></b>.</p>
+    <div class="field">
+      <label for="joinName">Pick a name to join with</label>
+      <input id="joinName" maxlength="18" placeholder="Commander" autocomplete="off">
+    </div>
+    <button id="joinNowBtn" class="primary" style="width:100%">Join the lobby</button>
+    <div class="err" id="joinErr"></div>
+    <p class="hint" style="margin-top:12px"><a href="#" id="toMenu">Go to the main menu instead</a></p>
+  </div>
+
+  <div class="home-card" id="homeCard">
     <div class="card">
       <h1 class="logo">faf<span>scribbl</span></h1>
       <p class="tagline">One player draws a Forged Alliance unit, everyone else guesses it in the chat. No FAF login, just pick a name.</p>
@@ -51,7 +63,6 @@
 <div id="game" class="hide">
   <header>
     <div class="brand">faf<span>scribbl</span></div>
-    <div class="timer" id="timer">-</div>
     <div class="roundbox" id="roundBox">Lobby</div>
     <div class="wordbox">
       <div class="sub" id="wordSub">waiting</div>
@@ -61,10 +72,20 @@
       <div class="codepill" id="codePill" title="Copy the invite link">Lobby <b id="codeText">-----</b></div>
       <a class="codepill" id="dbLink2" href="https://faforever.github.io/etfreeman-db/#/" target="_blank" rel="noopener">Unit DB</a>
       <button class="small ghost" id="skipBtn">Skip turn</button>
+      <button class="small ghost" id="sndBtn" title="Sound">&#128266;</button>
       <button class="small ghost" id="uiBtn" title="Display settings">&#9881;</button>
       <button class="small ghost" id="leaveBtn">Leave</button>
     </div>
   </header>
+
+  <div id="sndPanel" class="hide">
+    <div class="uirow"><b>Sound</b><button class="small ghost" id="sndClose">&#10005;</button></div>
+    <label><input type="checkbox" id="sndOn" style="width:auto"> Sound effects on</label>
+    <label for="sndVol" style="margin-top:8px">Volume <span id="sndVolVal">60%</span></label>
+    <input type="range" id="sndVol" min="0" max="100" step="5" value="60">
+    <p class="hint">Guesses, the end of a turn, and the clock at 30, 20 and the last 5 seconds.</p>
+    <button class="small ghost" id="sndTest">Play a test sound</button>
+  </div>
 
   <div id="uiPanel" class="hide">
     <div class="uirow"><b>Display</b><button class="small ghost" id="uiClose">&#10005;</button></div>
@@ -78,9 +99,17 @@
   </div>
 
   <main>
-    <div class="panel"><div id="players"></div></div>
+    <div class="panel" id="leftCol">
+      <div id="players"></div>
+      <div id="lookup" class="hide">
+        <div class="lkhead">Unit look-up</div>
+        <input id="lkInput" placeholder="aeon t1 scout" autocomplete="off" maxlength="60">
+        <div id="lkResults"><p class="lkhint">Describe a unit and this finds its name. Order does not matter.</p></div>
+      </div>
+    </div>
 
     <div class="panel" id="stage">
+      <div id="timerBand" class="hide"><span id="timer">-</span></div>
       <div id="lobbyPanel" class="hide">
       <div class="ovbox">
         <h2>Lobby <span class="mono" id="lobbyCode"></span></h2>
@@ -115,14 +144,21 @@
             </select>
           </div>
           <div>
-            <label for="setHints">Letter hints</label>
+            <label for="setHints">Letter hints <span class="hint">(minimum, long names get more)</span></label>
             <select id="setHints">
               <option value="0">Off</option>
-              <option value="1">1 letter</option>
-              <option value="2">2 letters</option>
-              <option value="3">3 letters</option>
-              <option value="4">4 letters</option>
-              <option value="5">5 letters</option>
+              <option value="1">at least 1 letter</option>
+              <option value="2">at least 2 letters</option>
+              <option value="3">at least 3 letters</option>
+              <option value="4">at least 4 letters</option>
+              <option value="5">at least 5 letters</option>
+            </select>
+          </div>
+          <div>
+            <label for="setLookup">Unit look-up box</label>
+            <select id="setLookup">
+              <option value="1">On, players can search unit names</option>
+              <option value="0">Off</option>
             </select>
           </div>
           <div>

@@ -487,6 +487,7 @@ ws.attach(server, {
         case 'kick': room.kick(player.id, String(m.id || '')); break;
         case 'skip': room.skip(player.id); break;
         case 'lobby': room.backToLobby(player.id); break;
+        case 'lookup': room.handleLookup(player, m.q); break;
         case 'sync': conn.sendJSON(room.stateFor(player)); break;
         case 'ping': conn.sendJSON({ t: 'pong', now: Date.now() }); break;
         default: break;

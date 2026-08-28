@@ -15,7 +15,9 @@ The container clones the repo and runs `server.js` directly, the same way faf-to
 ## Features
 
 ### Lobbies
-- Create a lobby, get a 5-letter code and an invite link (`/r/CODE`). Anyone with the link joins.
+- Create a lobby, get a 5-letter code and an invite link (`/r/CODE`). Opening that link asks for
+  a name and nothing else: no code box, no Create button to press by mistake. Somebody who has
+  played before is put straight into the lobby without being asked anything.
 - Public lobbies are listed on the front page. Private lobbies are link only. Toggle per lobby.
 - The creator is the host. If the host leaves, the crown moves to the next player automatically.
 - The host can kick players.
@@ -37,7 +39,8 @@ The container clones the repo and runs `server.js` directly, the same way faf-to
 | Draw time | **off**, or 15-600 seconds | 80 |
 | Max players | **unlimited**, or 2-60 | unlimited |
 | Word choices | 1 (assigned, no picking) to 5 | 3 |
-| Letter hints | off, or 1-5 letters | 2 |
+| Letter hints | off, or a minimum of 1-5 letters | 2 |
+| Unit look-up | on / off | on |
 | Visibility | private / public | private |
 | Word pool filters | one chip row per admin-defined tag group | nothing, tags are opt in |
 | Extra words | free text, optionally used on their own | empty |
@@ -71,8 +74,9 @@ That is the Factions group's **always include** tag, and it is editable like eve
    place a player ever sees a note, it goes to the drawer alone, and it disappears the moment the
    choice is made.
 3. Everyone else sees the word as underscores, with the length and the spaces visible. Letters
-   are revealed one at a time as the clock runs down, up to the hint count. Hints never uncover
-   more than 60% of the word.
+   are revealed one at a time as the clock runs down. The lobby setting is a **minimum**: a long
+   name earns one hint per five letters, so "Stealth Field Generator" gets four while "Wasp" gets
+   the configured two. Hints never uncover more than 60% of the word.
 4. Guesses go in the chat. A **correct guess is never shown to anybody**: the others only see
    "*name* guessed the word". The guesser is shown the word and can then chat with the other
    players who already guessed, and with the drawer, hidden from everyone still guessing.
@@ -140,6 +144,31 @@ Words with no match, map names for instance, simply have no picture until you up
 While setting up a lobby the host sees how many words the current filters leave, updating live as
 chips are toggled. Each chip carries its own word count too. With nothing selected it reads
 "242 words in the pool, everything is in play".
+
+### The unit look-up
+
+A search box sits under the player list, always visible, no button to press. Type a description
+in any order, "aeon t1 scout" or "scout t1 aeon", and it lists the units whose admin note and tags
+contain all of those words, with their pictures. It is there so people learn unit names instead of
+having to go and look them up every time.
+
+It searches the notes and tags only, never the word list wholesale, and the search runs on the
+server so a client cannot pull the answers out of it. **Map entries are excluded**: anything with a
+tag containing `map` never appears in the results, so difficulty tags cannot be fished either.
+
+The host can switch it off per lobby.
+
+### Sound
+
+The speaker in the header opens a volume slider and an on/off switch, both remembered per browser.
+Every sound is generated with the Web Audio API, so there are no audio files to ship or load:
+
+- a rising two-note chime when you guess correctly, and a quieter blip when somebody else does
+- a short descending phrase at the end of a turn, and a fanfare at the end of the game
+- the clock: one tone at 30 and 20 seconds, then a sharper one at each of the last five
+
+The clock itself sits between the word and the board, large, and turns red and pulses at
+10 seconds.
 
 ### Display settings
 
@@ -329,8 +358,8 @@ The test suite starts a real server on a random port and drives it over real Web
 HTTP routes, the admin API, the whole game flow, the word list collapse rules, hints, close
 guesses, chat visibility, drawing permissions, reconnection, kicking, host handover, filters and
 custom words, self-closing lobbies, the editable filter groups, the pool counter, tags that
-contain spaces, opt-in filtering, icon matching and uploads, and that no admin request can wipe
-the word list. 159 assertions.
+contain spaces, opt-in filtering, icon matching and uploads, the unit look-up and its map
+exclusion, hint scaling, and that no admin request can wipe the word list. 171 assertions.
 
 To catch undefined identifiers, which `node --check` cannot:
 
