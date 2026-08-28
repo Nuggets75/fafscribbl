@@ -348,7 +348,7 @@
       case 'canvas': rebuild(m.ops || []); break;
       case 'mask': if (S) { S.mask = m.mask; renderHeader(); } break;
       case 'reveal': if (S) { S.word = m.word; S.mask = m.word; renderHeader(); } break;
-      case 'choices': showChoices(m.words, m.hints); break;
+      case 'choices': window.__choiceIcons = m.icons || []; showChoices(m.words, m.hints); break;
       case 'turnend': showTurnEnd(m); break;
       case 'gameend': showGameEnd(m); break;
       case 'pong': offset = m.now - Date.now(); break;
@@ -418,6 +418,7 @@
   function renderToolbar() {
     var show = S && S.state === 'drawing' && isDrawer();
     $('tools').classList.toggle('hide', !show);
+    renderRef();
     board.style.cursor = show ? 'crosshair' : 'default';
     if (show) buildTools();
     sizeCanvas(); blit();
@@ -450,7 +451,24 @@
       var box = document.createElement('div');
       box.className = 'fgroup';
       var lab = document.createElement('label');
-      lab.innerHTML = esc(g.label) + ' <span class="hint">(none selected = all)</span>';
+      lab.innerHTML = esc(g.label) + ' ';
+      var mk = function (text, on) {
+        var b = document.createElement('button');
+        b.className = 'small ghost';
+        b.type = 'button';
+        b.style.padding = '1px 7px';
+        b.style.fontSize = '11px';
+        b.style.marginLeft = '4px';
+        b.textContent = text;
+        b.onclick = function () {
+          if (!isHost()) return;
+          Array.prototype.forEach.call(box.querySelectorAll('.chip'), function (c) { c.classList.toggle('on', on); });
+          pushSettings();
+        };
+        return b;
+      };
+      lab.appendChild(mk('all', true));
+      lab.appendChild(mk('none', false));
       box.appendChild(lab);
       var chips = document.createElement('div');
       chips.className = 'chips';
@@ -511,9 +529,12 @@
       : 'Only the host can change the settings.';
     var enough = (S.players || []).filter(function (p) { return p.connected; }).length >= 2;
     var empty = S.poolSize === 0;
+    var anyOn = !!document.querySelector('#filterGroups .chip.on');
     $('startBtn').disabled = !host || !enough || empty;
     $('startBtn').textContent = !enough ? 'Waiting for at least 2 players'
-      : (empty ? 'No words match these filters' : (host ? 'Start the game' : 'Waiting for the host'));
+      : (!anyOn ? 'Select at least one category'
+        : (empty ? 'No words in this selection'
+          : (host ? 'Start the game' : 'Waiting for the host')));
 
     var lp = $('lobbyPlayers');
     lp.innerHTML = '';
@@ -529,14 +550,18 @@
   function renderPoolInfo() {
     if (!S || typeof S.poolSize !== 'number') { $('poolInfo').textContent = ''; return; }
     var n = S.poolSize;
-    var filtered = !!document.querySelector('#filterGroups .chip.on');
+    var anyOn = !!document.querySelector('#filterGroups .chip.on');
     $('poolInfo').classList.toggle('empty', n === 0);
-    if (n === 0) {
-      $('poolInfo').innerHTML = '<b>0</b> words match these filters, deselect something';
+    if (!anyOn) {
+      $('poolInfo').innerHTML = 'Nothing is selected. <b>Pick at least one category</b> above to choose what can come up.';
+    } else if (n === 0) {
+      $('poolInfo').innerHTML = '<b>0</b> words in this selection, pick something else';
     } else {
-      $('poolInfo').innerHTML = '<b>' + n + '</b> word' + (n === 1 ? '' : 's') +
-        (filtered ? ' in this selection' : ' in the pool, everything is in play');
+      $('poolInfo').innerHTML = '<b>' + n + '</b> word' + (n === 1 ? '' : 's') + ' in this selection';
     }
+    var host = isHost();
+    $('selectAllTags').disabled = !host;
+    $('clearAllTags').disabled = !host;
   }
 
   function collectSettings() {
@@ -563,6 +588,16 @@
     $(id).addEventListener('change', pushSettings);
   });
   $('setCustom').addEventListener('blur', pushSettings);
+  $('selectAllTags').onclick = function () {
+    if (!isHost()) return;
+    Array.prototype.forEach.call(document.querySelectorAll('#filterGroups .chip'), function (c) { c.classList.add('on'); });
+    pushSettings();
+  };
+  $('clearAllTags').onclick = function () {
+    if (!isHost()) return;
+    Array.prototype.forEach.call(document.querySelectorAll('#filterGroups .chip'), function (c) { c.classList.remove('on'); });
+    pushSettings();
+  };
   $('startBtn').onclick = function () { send({ t: 'start' }); };
   $('againBtn').onclick = function () { if (isHost()) send({ t: 'lobby' }); else toast('Only the host can do that'); };
   $('copyInvite').onclick = function () { copy($('inviteLink').value); };
@@ -573,6 +608,65 @@
     else prompt('Copy this link', text);
   }
   $('skipBtn').onclick = function () { send({ t: 'skip' }); };
+
+  /* --------- the drawer's reference picture --------- */
+  var refWidth = Number(ls('fs_ref_w')) || 180;
+  function refAvailable() { return !!(S && S.wordIcon); }
+  function applyRefWidth(px) {
+    refWidth = Math.max(90, Math.min(420, Math.round(px)));
+    $('refPanel').style.width = refWidth + 'px';
+    ls('fs_ref_w', String(refWidth));
+  }
+  function showRef(on) {
+    ls('fs_ref', on ? '1' : '0');
+    renderRef();
+  }
+  function renderRef() {
+    var panel = $('refPanel');
+    var can = refAvailable() && isDrawer() && S.state === 'drawing';
+    $('toolRef').classList.toggle('hide', !can);
+    if (!can) { panel.classList.add('hide'); return; }
+    var want = ls('fs_ref') !== '0';
+    $('toolRef').classList.toggle('on', want);
+    panel.classList.toggle('hide', !want);
+    if (want) {
+      var src = '/icons/' + S.wordIcon;
+      if ($('refImg').getAttribute('src') !== src) $('refImg').src = src;
+      applyRefWidth(refWidth);
+      clampRef();
+    }
+  }
+  function clampRef() {
+    var stage = $('stage'), panel = $('refPanel');
+    if (!stage || panel.classList.contains('hide')) return;
+    var maxL = Math.max(0, stage.clientWidth - panel.offsetWidth - 4);
+    var maxT = Math.max(0, stage.clientHeight - panel.offsetHeight - 4);
+    panel.style.left = Math.max(0, Math.min(maxL, parseInt(panel.style.left || '12', 10))) + 'px';
+    panel.style.top = Math.max(0, Math.min(maxT, parseInt(panel.style.top || '12', 10))) + 'px';
+  }
+  $('toolRef').onclick = function () { showRef(ls('fs_ref') === '0'); };
+  $('refClose').onclick = function () { showRef(false); };
+  $('refBigger').onclick = function () { applyRefWidth(refWidth * 1.25); clampRef(); };
+  $('refSmaller').onclick = function () { applyRefWidth(refWidth / 1.25); clampRef(); };
+  (function dragRef() {
+    var bar = document.querySelector('#refPanel .refbar');
+    var panel = $('refPanel');
+    var start = null;
+    bar.addEventListener('pointerdown', function (e) {
+      if (e.target.tagName === 'BUTTON') return;
+      start = { x: e.clientX, y: e.clientY, l: parseInt(panel.style.left || '12', 10), t: parseInt(panel.style.top || '12', 10) };
+      try { bar.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      e.preventDefault();
+    });
+    bar.addEventListener('pointermove', function (e) {
+      if (!start) return;
+      panel.style.left = (start.l + e.clientX - start.x) + 'px';
+      panel.style.top = (start.t + e.clientY - start.y) + 'px';
+    });
+    var stop = function () { if (start) { start = null; clampRef(); } };
+    bar.addEventListener('pointerup', stop);
+    bar.addEventListener('pointercancel', stop);
+  })();
 
   /* --------- display settings --------- */
   function applyBoard(pct) {
@@ -631,7 +725,7 @@
     if (S.state !== 'gameend') $('ovGameEnd').classList.add('hide');
     else $('ovGameEnd').classList.toggle('hide', gameEndHidden);
     if (S.state === 'choosing') {
-      if (isDrawer() && S.choosing) showChoices(S.choosing, S.choosingHints);
+      if (isDrawer() && S.choosing) { window.__choiceIcons = S.choosingIcons || []; showChoices(S.choosing, S.choosingHints); }
       else showWaitingChoice();
     }
   }
@@ -653,6 +747,14 @@
       var name = document.createElement('span');
       name.textContent = w;
       b.appendChild(name);
+      var icon = (window.__choiceIcons || [])[i];
+      if (icon) {
+        var im = document.createElement('img');
+        im.className = 'choiceicon';
+        im.src = '/icons/' + icon;
+        im.alt = '';
+        b.insertBefore(im, name);
+      }
       var note = (hints || [])[i];
       if (note) {
         var n = document.createElement('span');
@@ -674,6 +776,9 @@
   function showTurnEnd(m) {
     if (S) { S.state = 'turnend'; S.word = m.word; S.endsAt = m.endsAt; }
     hideChoices();
+    var ri = $('revealIcon');
+    if (m.icon) { ri.src = '/icons/' + m.icon; ri.classList.remove('hide'); }
+    else ri.classList.add('hide');
     $('revealWord').textContent = m.word;
     var box = $('turnResults');
     box.innerHTML = '';

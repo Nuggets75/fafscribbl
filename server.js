@@ -16,6 +16,9 @@ const HOST = process.env.HOST || '0.0.0.0';
 const DATA_DIR = process.env.DATA_DIR || '/data';
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const SEED = path.join(__dirname, 'data', 'words.seed.json');
+const ICON_MAP = path.join(__dirname, 'data', 'icons.map.json');
+const ICON_BUNDLE = path.join(__dirname, 'data', 'icons.bundle.json');
+const MAX_ICON_BYTES = 2 * 1024 * 1024;
 const UNIT_DB_URL = process.env.UNIT_DB_URL || 'https://faforever.github.io/etfreeman-db/#/';
 const SITE_NAME = process.env.SITE_NAME || 'fafscribbl';
 
@@ -26,10 +29,11 @@ if (!ADMIN_PASSWORD) {
   console.warn('[fafscribbl] Set ADMIN_PASSWORD in the container to keep it across restarts.');
 }
 
-const store = new Store(DATA_DIR, SEED);
+const store = new Store(DATA_DIR, SEED, ICON_MAP, ICON_BUNDLE);
 store.load();
 const mgr = new RoomManager(store);
-console.log('[fafscribbl] data dir ' + DATA_DIR + ', ' + store.db.words.length + ' words (' + store.enabledWords().length + ' enabled)');
+console.log('[fafscribbl] data dir ' + DATA_DIR + ', ' + store.db.words.length + ' words (' +
+  store.enabledWords().length + ' enabled), ' + store.builtinIconNames().length + ' unit icons');
 
 // ---------------------------------------------------------------- admin auth
 const adminTokens = new Map(); // token -> expiry
@@ -215,6 +219,45 @@ const server = http.createServer((req, res) => {
         tagCounts: store.tagCounts()
       });
     }
+    if (p === '/api/admin/icons' && method === 'GET') {
+      let custom = [];
+      try {
+        custom = fs.readdirSync(store.iconDir)
+          .filter((f) => /\.(png|jpg|jpeg|gif|webp)$/i.test(f))
+          .sort()
+          .map((f) => 'custom/' + f);
+      } catch (e) { custom = []; }
+      return sendJSON(res, 200, {
+        builtin: store.builtinIconNames().sort().map((f) => 'units/' + f),
+        custom: custom
+      });
+    }
+    if (p === '/api/admin/icons/upload' && method === 'POST') {
+      return readJSON(req, res, (b) => {
+        const m = /^data:image\/(png|jpe?g|gif|webp);base64,([A-Za-z0-9+/=\s]+)$/.exec(String(b.dataUrl || ''));
+        if (!m) return sendJSON(res, 400, { error: 'That is not a PNG, JPG, GIF or WEBP image' });
+        let buf;
+        try { buf = Buffer.from(m[2].replace(/\s+/g, ''), 'base64'); }
+        catch (e) { return sendJSON(res, 400, { error: 'Could not decode the image' }); }
+        if (!buf.length) return sendJSON(res, 400, { error: 'Empty image' });
+        if (buf.length > MAX_ICON_BYTES) return sendJSON(res, 413, { error: 'Images must be under 2 MB' });
+        const ext = m[1] === 'jpeg' ? 'jpg' : m[1];
+        const base = String(b.name || 'icon').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'icon';
+        const file = base + '-' + crypto.randomBytes(4).toString('hex') + '.' + ext;
+        try { fs.writeFileSync(store.customIconPath(file), buf); }
+        catch (e) { return sendJSON(res, 500, { error: 'Could not save the image' }); }
+        return sendJSON(res, 200, { icon: 'custom/' + file });
+      });
+    }
+    if (p === '/api/admin/icons/refill' && method === 'POST') {
+      let cleared = 0;
+      for (const w of store.db.words) {
+        if (w.icon === '') { delete w.icon; cleared++; }
+      }
+      const filled = store.fillIcons();
+      store.save();
+      return sendJSON(res, 200, { checked: cleared, filled: filled });
+    }
     if (p === '/api/admin/words' && method === 'POST') {
       return readJSON(req, res, (b) => {
         const word = String(b.word || '').trim();
@@ -227,6 +270,8 @@ const server = http.createServer((req, res) => {
           tags: Array.isArray(b.tags) ? b.tags.map((s) => String(s).trim().toLowerCase()).filter(Boolean).slice(0, 12) : [],
           enabled: b.enabled !== false
         };
+        if (typeof b.icon === 'string') w.icon = Store.validIcon(b.icon) ? b.icon : '';
+        else { const hit = store.iconMap[Store.iconKey(w.word)]; w.icon = hit || ''; }
         store.db.words.push(w);
         store.save();
         return sendJSON(res, 200, { word: w });
@@ -245,6 +290,14 @@ const server = http.createServer((req, res) => {
         if ('aliases' in b) w.aliases = (Array.isArray(b.aliases) ? b.aliases : []).map((s) => String(s).trim()).filter(Boolean).slice(0, 12);
         if ('tags' in b) w.tags = (Array.isArray(b.tags) ? b.tags : []).map((s) => String(s).trim().toLowerCase()).filter(Boolean).slice(0, 12);
         if ('enabled' in b) w.enabled = !!b.enabled;
+        if ('icon' in b) {
+          const v = String(b.icon || '');
+          if (v && !Store.validIcon(v)) return sendJSON(res, 400, { error: 'That is not a valid icon' });
+          if (v.indexOf('units/') === 0 && !store.hasBuiltinIcon(v.slice(6))) {
+            return sendJSON(res, 400, { error: 'No such icon in the unit database' });
+          }
+          w.icon = v;
+        }
         store.save();
         return sendJSON(res, 200, { word: w });
       });
@@ -287,11 +340,8 @@ const server = http.createServer((req, res) => {
         try { items = parseImport(b.text); }
         catch (e) { return sendJSON(res, 400, { error: e.message }); }
         if (!items.length) return sendJSON(res, 400, { error: 'Nothing to import' });
-        if (b.mode === 'replace') {
-          store.db.words = items.map((w) => Object.assign({ id: store.nextId() }, w));
-          store.save();
-          return sendJSON(res, 200, { added: items.length, skipped: 0, replaced: true });
-        }
+        // Import only ever adds. There is deliberately no mode that wipes the list:
+        // everyone with the admin password would be one click away from destroying it.
         const have = new Set(store.db.words.map((w) => w.word.toLowerCase()));
         let added = 0, skipped = 0;
         for (const it of items) {
@@ -334,6 +384,27 @@ const server = http.createServer((req, res) => {
       return readJSON(req, res, (b) => sendJSON(res, 200, { closed: mgr.close(b.code) }));
     }
     return sendJSON(res, 404, { error: 'Unknown admin endpoint' });
+  }
+
+  // ---- the shipped unit icons come out of one bundled file
+  if (p.indexOf('/icons/units/') === 0 && (method === 'GET' || method === 'HEAD')) {
+    const name = decodeURIComponent(p.slice('/icons/units/'.length));
+    const buf = /^[A-Za-z0-9._-]{1,80}$/.test(name) ? store.builtinIcon(name) : null;
+    if (!buf) return sendText(res, 404, 'Not found');
+    res.writeHead(200, {
+      'Content-Type': 'image/png',
+      'Content-Length': buf.length,
+      'Cache-Control': 'public, max-age=604800, immutable',
+      'X-Content-Type-Options': 'nosniff'
+    });
+    return method === 'HEAD' ? res.end() : res.end(buf);
+  }
+
+  // ---- uploaded icons live in the data volume, not in the repo
+  if (p.indexOf('/icons/custom/') === 0 && (method === 'GET' || method === 'HEAD')) {
+    const name = decodeURIComponent(p.slice('/icons/custom/'.length));
+    if (!/^[A-Za-z0-9._-]{1,80}$/.test(name)) return sendText(res, 400, 'Bad name');
+    return serveFile(res, store.customIconPath(name), true);
   }
 
   // ---- static

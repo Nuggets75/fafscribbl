@@ -3,7 +3,7 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   var token = null, words = [], defaults = null, rooms = [], selected = {}, page = 1;
-  var groups = [], counts = {};
+  var groups = [], counts = {}, iconList = null, iconTarget = null;
 
   function toast(t) {
     var d = document.createElement('div');
@@ -142,6 +142,16 @@
         cb.checked = next;
         setSelected(w.id, next, tr);
       };
+
+      var tdIcon = document.createElement('td');
+      tdIcon.className = 'c';
+      var img = document.createElement('img');
+      img.className = 'wicon' + (w.icon ? '' : ' empty');
+      img.src = w.icon ? ('/icons/' + w.icon) : '/favicon.svg';
+      img.title = w.icon ? ('Icon: ' + w.icon + ' (click to change)') : 'No icon, click to pick one';
+      img.onclick = function (e) { e.stopPropagation(); openIconPicker(w, img); };
+      tdIcon.appendChild(img);
+      tr.appendChild(tdIcon);
 
       tr.appendChild(field(w, 'word'));
       tr.appendChild(field(w, 'hint'));
@@ -357,6 +367,78 @@
     }).catch(function (e) { toast(e.message); });
   };
 
+  /* ------------------------------------------------------------- icons */
+  function loadIcons() {
+    if (iconList) return Promise.resolve(iconList);
+    return api('/api/admin/icons').then(function (d) {
+      iconList = (d.custom || []).concat(d.builtin || []);
+      return iconList;
+    });
+  }
+  function openIconPicker(w, img) {
+    iconTarget = { word: w, img: img };
+    $('iconFor').textContent = 'Icon for "' + w.word + '"';
+    $('iconStat').textContent = '';
+    $('iconSearch').value = '';
+    $('iconModal').classList.remove('hide');
+    $('iconGrid').innerHTML = '<p class="hint">Loading...</p>';
+    loadIcons().then(function () { renderIconGrid(); $('iconSearch').focus(); })
+      .catch(function (e) { $('iconGrid').innerHTML = '<p class="hint">' + esc(e.message) + '</p>'; });
+  }
+  function renderIconGrid() {
+    var q = $('iconSearch').value.trim().toLowerCase();
+    var cur = iconTarget && iconTarget.word.icon;
+    var list = (iconList || []).filter(function (f) { return !q || f.toLowerCase().indexOf(q) !== -1; });
+    var grid = $('iconGrid');
+    grid.innerHTML = '';
+    list.slice(0, 600).forEach(function (f) {
+      var im = document.createElement('img');
+      im.src = '/icons/' + f;
+      im.title = f;
+      im.loading = 'lazy';
+      if (f === cur) im.className = 'on';
+      im.onclick = function () { setIcon(f); };
+      grid.appendChild(im);
+    });
+    if (!list.length) grid.innerHTML = '<p class="hint">Nothing matches.</p>';
+    $('iconStat').textContent = list.length + ' available';
+  }
+  function setIcon(value) {
+    if (!iconTarget) return;
+    var w = iconTarget.word, img = iconTarget.img;
+    api('/api/admin/words', { method: 'PUT', body: JSON.stringify({ id: w.id, icon: value }) })
+      .then(function (r) {
+        Object.assign(w, r.word);
+        img.src = w.icon ? ('/icons/' + w.icon) : '/favicon.svg';
+        img.classList.toggle('empty', !w.icon);
+        img.title = w.icon ? ('Icon: ' + w.icon + ' (click to change)') : 'No icon, click to pick one';
+        $('iconModal').classList.add('hide');
+        toast(value ? 'Icon set' : 'Icon removed');
+      }).catch(function (e) { toast(e.message); });
+  }
+  $('iconSearch').addEventListener('input', renderIconGrid);
+  $('iconCancel').onclick = function () { $('iconModal').classList.add('hide'); };
+  $('iconClear').onclick = function () { setIcon(''); };
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') $('iconModal').classList.add('hide');
+  });
+  $('iconFile').addEventListener('change', function () {
+    var f = $('iconFile').files && $('iconFile').files[0];
+    if (!f) return;
+    if (f.size > 2 * 1024 * 1024) { toast('Images must be under 2 MB'); return; }
+    var rd = new FileReader();
+    rd.onload = function () {
+      $('iconStat').textContent = 'Uploading...';
+      api('/api/admin/icons/upload', { method: 'POST', body: JSON.stringify({ dataUrl: rd.result, name: f.name.replace(/\.[^.]+$/, '') }) })
+        .then(function (r) {
+          iconList = null;
+          $('iconFile').value = '';
+          return loadIcons().then(function () { setIcon(r.icon); });
+        }).catch(function (e) { $('iconStat').textContent = ''; toast(e.message); });
+    };
+    rd.readAsDataURL(f);
+  });
+
   /* ------------------------------------------------------------- filters */
   // Counts drift as soon as a word is added, tagged or disabled, so pull them fresh
   // whenever the tab is opened rather than trusting whatever boot left behind.
@@ -377,8 +459,7 @@
       row.className = 'grow';
       row.innerHTML =
         '<div><label>Group name</label><input type="text" class="g-label" value="' + esc(g.label) + '"></div>' +
-        '<div><label>Tags, comma separated</label><input type="text" class="g-tags" value="' + esc((g.tags || []).join(', ')) + '"></div>' +
-        '<div><label>Always include tag</label><input type="text" class="g-always" value="' + esc(g.always || '') + '" placeholder="optional"></div>';
+        '<div><label>Tags, comma separated</label><input type="text" class="g-tags" value="' + esc((g.tags || []).join(', ')) + '"></div>';
       var rm = document.createElement('div');
       var b = document.createElement('button');
       b.className = 'small danger delbtn';
@@ -413,8 +494,7 @@
       out.push({
         id: (groups[i] && groups[i].id) || label.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         label: label,
-        tags: row.querySelector('.g-tags').value.split(',').map(function (x) { return x.trim().toLowerCase(); }).filter(Boolean),
-        always: row.querySelector('.g-always').value.trim().toLowerCase()
+        tags: row.querySelector('.g-tags').value.split(',').map(function (x) { return x.trim().toLowerCase(); }).filter(Boolean)
       });
     });
     return out;
@@ -422,7 +502,7 @@
 
   $('addGroup').onclick = function () {
     groups = collectGroups();
-    groups.push({ id: '', label: 'New group', tags: [], always: '' });
+    groups.push({ id: '', label: 'New group', tags: [] });
     renderGroups();
   };
   $('saveFilters').onclick = function () {
@@ -472,10 +552,9 @@
   $('importBtn').onclick = function () {
     var text = $('importText').value;
     if (!text.trim()) return toast('Nothing to import');
-    if ($('importMode').value === 'replace' && !confirm('This replaces the entire word list. Continue?')) return;
-    api('/api/admin/words/import', { method: 'POST', body: JSON.stringify({ text: text, mode: $('importMode').value }) })
+    api('/api/admin/words/import', { method: 'POST', body: JSON.stringify({ text: text }) })
       .then(function (r) {
-        $('importStat').textContent = r.replaced ? ('Replaced with ' + r.added + ' words') : (r.added + ' added, ' + r.skipped + ' duplicates skipped');
+        $('importStat').textContent = r.added + ' added, ' + r.skipped + ' already in the list';
         return api('/api/admin/state');
       })
       .then(function (d) {
@@ -483,6 +562,16 @@
         fillTagFilter(); renderRows(); renderGroups();
       })
       .catch(function (e) { toast(e.message); });
+  };
+  $('refillBtn').onclick = function () {
+    $('refillStat').textContent = 'Matching...';
+    api('/api/admin/icons/refill', { method: 'POST' })
+      .then(function (r) {
+        $('refillStat').textContent = r.filled + ' of ' + r.checked + ' words without a picture were matched';
+        return api('/api/admin/state');
+      })
+      .then(function (d) { words = d.words; renderRows(); })
+      .catch(function (e) { $('refillStat').textContent = ''; toast(e.message); });
   };
   $('exportBtn').onclick = function () {
     fetch('/api/admin/export', { headers: { 'x-admin-token': token } })

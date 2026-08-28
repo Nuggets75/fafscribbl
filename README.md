@@ -39,17 +39,19 @@ The container clones the repo and runs `server.js` directly, the same way faf-to
 | Word choices | 1 (assigned, no picking) to 5 | 3 |
 | Letter hints | off, or 1-5 letters | 2 |
 | Visibility | private / public | private |
-| Word pool filters | one chip row per admin-defined tag group | all |
+| Word pool filters | one chip row per admin-defined tag group | nothing, tags are opt in |
 | Extra words | free text, optionally used on their own | empty |
 
 With **draw time off** a turn only ends when everybody has guessed, or when the drawer (or the
 host) presses **Skip turn**. Scoring falls back to guess order instead of the clock.
 
-Selecting nothing in a group means everything in that group. Tags are ORed inside a group and
-ANDed across groups, so `naval` + `uef` means UEF naval.
+**Tags are opt in and additive.** A word can come up if it carries **any** selected tag, so
+`naval` on its own gives every naval unit of every faction, and `land` plus `easy maps` gives land
+units and those maps together. A lobby with nothing selected has nothing in play: it says so and
+Start is blocked until at least one category is picked.
 
-The lobby shows a live count of how many words the current selection actually leaves, and Start
-is blocked with "No words match these filters" if that hits zero. No silent fallback.
+Each chip row has **all** and **none** links, and there is a **Select everything** button under
+the count. The lobby shows a live count of exactly how many words the current selection leaves.
 
 **A tag with no enabled words behind it is never offered.** Delete or disable every Nomads unit
 and the `nomads` chip disappears by itself; a whole group with nothing live in it is not drawn at
@@ -110,10 +112,28 @@ That is the Factions group's **always include** tag, and it is editable like eve
   80% by default and adjustable from 40% to 100% in the display settings. It is measured against
   the live size of its container, with a `ResizeObserver` behind it, so it can never grow over
   the toolbar when the toolbar appears.
+- **The drawer gets a reference picture.** Every unit word carries the in-game build icon, shown
+  under each option on the pick screen and then in a small floating panel while drawing. The
+  panel can be dragged anywhere, resized, hidden and brought back with the eye button in the
+  toolbar. It is per browser and only the drawer ever sees it. The picture also appears on the
+  reveal screen once the word is out.
 - Anyone who joins mid-turn gets the full drawing replayed instantly.
 - Only the current drawer can draw. The server enforces it, the toolbar is simply hidden for
   everybody else.
 - Works with mouse, pen and touch.
+
+### Unit pictures
+
+506 unit icons from the [etfreeman unit database](https://faforever.github.io/etfreeman-db/#/)
+ship with the repo, bundled into `data/icons.bundle.json` so the whole set uploads as one file.
+`data/icons.map.json` maps a normalised word to its icon.
+
+On every start, any word that has never had an icon is matched against that map by name, so a
+word list restored from an export picks its pictures up by itself and nothing you have edited is
+touched. A word whose icon you clear stays cleared. **Match missing icons** on the Import/export
+tab runs the same pass on demand.
+
+Words with no match, map names for instance, simply have no picture until you upload one.
 
 ### The word pool counter
 
@@ -153,6 +173,8 @@ Wrong passwords are rate limited per IP.
   - *Also accepted* - alternative spellings that count as correct.
   - *Tags* - drive the lobby faction and type filters.
   - *On* - disabled words stay in the list but never come up in a game.
+  - *Icon* - the picture the drawer sees. Click the thumbnail to pick another from the 506 unit
+    icons that ship with the repo, upload your own image (under 2 MB), or clear it.
   - Search across every field, filter by enabled/disabled or by tag, 50/100/all per page.
   - Multi-select for bulk enable, disable, delete, add tag and remove tag.
 - **Lobby defaults**: the settings every newly created lobby starts with.
@@ -163,11 +185,13 @@ Wrong passwords are rate limited per IP.
   you can see what is available to build a group from.
 - **Live lobbies**: every lobby on the server, who is in it, what is being drawn right now, and
   a button to close one.
-- **Import / export**: import plain lines or a JSON export, merging (duplicates skipped) or
-  replacing. Export downloads the whole list including disabled words, and importing that file
-  back with **Replace the whole list** is how you undo a bad edit. There is deliberately no
-  one-click "reset everything" button, because everyone who knows the admin password would have
-  it.
+- **Import / export**: import plain lines or a JSON export. **Import only ever adds.** Words
+  already in the list are skipped, nothing is overwritten and nothing is removed. Export
+  downloads the whole list including disabled words.
+  Nothing in the admin tab can destroy the word list in one action: there is no "reset to the
+  shipped list" button and no "replace the whole list" import mode, because everyone who knows
+  the admin password would be one click away from wiping it. Removing words is done deliberately,
+  in the Words tab, with a confirmation.
 
 Import line format, everything after the word optional:
 
@@ -229,6 +253,9 @@ start. App listens on port **8092**.
 | `SITE_NAME` | `fafscribbl` | shown in the API config |
 | `FAFSCRIBBL_EMPTY_MS` | `60000` | how long an empty lobby is held open, testing knob |
 
+Uploaded icons live in `$DATA_DIR/icons/` and are served from `/icons/custom/...`, so they
+survive a redeploy along with the word list.
+
 If `ADMIN_PASSWORD` is not set the server generates one, prints it to the container log and
 carries on, so a missing variable never stops the site from running. It changes on every restart,
 so set it properly.
@@ -261,6 +288,8 @@ lib/game.js          rooms, turn engine, scoring, chat rules, drawing relay
 lib/words.js         normalisation, Levenshtein, close-guess and leak detection, masking
 lib/store.js         JSON persistence
 data/words.seed.json the shipped word list
+data/icons.bundle.json  506 unit icons, base64, one file
+data/icons.map.json     word to icon lookup used to fill icons in automatically
 public/              index.html, app.js, admin.html, admin.js, style.css, favicon.svg
 test/run.js          end to end test suite
 ```
@@ -299,8 +328,9 @@ npm test           # end to end suite, needs node 22+ for the WebSocket client
 The test suite starts a real server on a random port and drives it over real WebSockets:
 HTTP routes, the admin API, the whole game flow, the word list collapse rules, hints, close
 guesses, chat visibility, drawing permissions, reconnection, kicking, host handover, filters and
-custom words, self-closing lobbies, the editable filter groups, the pool counter and tags that
-contain spaces. 128 assertions.
+custom words, self-closing lobbies, the editable filter groups, the pool counter, tags that
+contain spaces, opt-in filtering, icon matching and uploads, and that no admin request can wipe
+the word list. 159 assertions.
 
 To catch undefined identifiers, which `node --check` cannot:
 

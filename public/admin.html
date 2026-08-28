@@ -28,13 +28,23 @@
   .onbtn{background:#1c3a24;color:var(--good);border:1px solid #2d5b38}
   .onbtn:hover{filter:brightness(1.3)}
   .onbtn.off{background:#262d38;color:var(--dim);border:1px solid var(--line)}
-  .grow{display:grid;grid-template-columns:170px 1fr 150px 40px;gap:8px;align-items:end;margin-bottom:10px}
+  .grow{display:grid;grid-template-columns:190px 1fr 40px;gap:8px;align-items:end;margin-bottom:10px}
   @media(max-width:760px){.grow{grid-template-columns:1fr}}
   .chips{display:flex;flex-wrap:wrap;gap:6px}
   .chip{padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);
     font-size:13px;cursor:pointer}
   .chip:hover{border-color:var(--accent)}
   .chip .n{opacity:.55;margin-left:5px}
+  #iconModal{position:fixed;inset:0;background:#0b0f14ee;z-index:60;display:flex;
+    align-items:center;justify-content:center;padding:20px}
+  .iconbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;
+    width:100%;max-width:760px;max-height:88vh;display:flex;flex-direction:column}
+  #iconGrid{flex:1;overflow:auto;display:grid;gap:6px;margin-top:10px;
+    grid-template-columns:repeat(auto-fill,minmax(64px,1fr))}
+  #iconGrid img{width:100%;aspect-ratio:1;object-fit:contain;background:#0c1016;
+    border:1px solid var(--line);border-radius:6px;cursor:pointer}
+  #iconGrid img:hover{border-color:var(--accent)}
+  #iconGrid img.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
   tr.saved{background:#16301c55}
   .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
   .bar input[type=text]{width:220px}
@@ -84,7 +94,9 @@
           <input type="text" id="newTags" placeholder="tags: uef, land, t3" style="width:180px">
           <button class="primary" id="addBtn">Add</button>
         </div>
-        <p class="hint">The bracket note is only ever shown here in the admin list and on the reveal screen after a turn. Players never see it while guessing.</p>
+        <p class="hint">The note is for you and for whoever is drawing: guessers never see it.
+        A new word picks up its picture from the unit database automatically when the name matches,
+        and you can click any icon in the table to change or upload one.</p>
       </div>
 
       <div class="card">
@@ -118,8 +130,8 @@
         <div style="overflow:auto;max-height:64vh">
           <table>
             <thead><tr>
-              <th class="c"></th><th style="width:22%">Word</th><th style="width:30%">Note (admin only)</th>
-              <th style="width:22%">Also accepted</th><th style="width:16%">Tags</th><th class="c">On</th><th class="c"></th>
+              <th class="c"></th><th class="c">Icon</th><th style="width:20%">Word</th><th style="width:27%">Note (admin only)</th>
+              <th style="width:20%">Also accepted</th><th style="width:15%">Tags</th><th class="c">On</th><th class="c"></th>
             </tr></thead>
             <tbody id="rows"></tbody>
           </table>
@@ -153,9 +165,9 @@
         <p class="hint">These are the chip rows a host sees when setting up a lobby. Tags with no
         enabled words behind them are hidden from the lobby automatically, so deleting every unit
         of a kind removes its chip without you touching anything here.<br>
-        <b>Always include</b> is optional: words carrying that tag ignore the group entirely.
-        The Factions group uses <span class="mono">neutral</span> so mexes and pgens stay in the
-        pool whichever faction you pick.</p>
+        Tags are opt in for the host: a word can come up if it carries <b>any</b> selected tag,
+        so picking <span class="mono">naval</span> gives every naval unit and picking
+        <span class="mono">easy maps</span> gives just those maps.</p>
         <div id="groupRows"></div>
         <div class="bar" style="margin-top:12px">
           <button id="addGroup">Add a group</button>
@@ -187,14 +199,12 @@
           <span class="mono">Word | note | alias, alias | tag, tag</span><br>
           Everything after the word is optional. Aliases and tags are separated by commas only,
           so a tag can contain spaces: <span class="mono">easy maps</span> is one tag.
-          A full JSON export also works.</p>
-          <textarea id="importText" placeholder="Percival | T3 UEF assault bot | Perci | uef land t3"></textarea>
+          A full JSON export also works.<br>
+          Importing only ever <b>adds</b>. Words already in the list are skipped, nothing is
+          overwritten and nothing is removed.</p>
+          <textarea id="importText" placeholder="Percival | T3 UEF assault bot | Perci | uef, land, t3"></textarea>
           <div class="bar" style="margin-top:10px">
-            <select id="importMode">
-              <option value="merge">Add to the list, skip duplicates</option>
-              <option value="replace">Replace the whole list</option>
-            </select>
-            <button class="primary" id="importBtn">Import</button>
+            <button class="primary" id="importBtn">Add these to the list</button>
             <span class="stat" id="importStat"></span>
           </div>
         </div>
@@ -202,11 +212,35 @@
           <h3 style="margin:0 0 4px;font-size:16px">Export</h3>
           <p class="hint">Export gives you the full JSON, including disabled words.</p>
           <button id="exportBtn">Download the word list</button>
-          <p class="hint" style="margin-top:14px">Keep a copy before a big edit. Importing with
-          <b>Replace the whole list</b> overwrites everything, and that is the only way back.</p>
+          <p class="hint" style="margin-top:14px">Keep a copy before a big edit. Nothing in this
+          tab can destroy the list: import only adds. To undo a bad edit, delete the offending
+          words in the Words tab and import your backup back in.</p>
+          <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+          <p class="hint">Words with no picture are matched against the shipped unit database by
+          name. This runs on every restart, and you can run it now.</p>
+          <button id="refillBtn">Match missing icons</button>
+          <span class="stat" id="refillStat"></span>
         </div>
       </div>
     </section>
+  </div>
+</div>
+<div id="iconModal" class="hide">
+  <div class="iconbox">
+    <div class="bar" style="margin-bottom:8px">
+      <b id="iconFor">Icon</b>
+      <div style="flex:1"></div>
+      <button class="small ghost" id="iconCancel">Close</button>
+    </div>
+    <div class="bar">
+      <input type="text" id="iconSearch" placeholder="Search by unit id or file name" style="width:260px">
+      <label class="small" style="display:inline-flex;align-items:center;gap:6px;margin:0">
+        <input type="file" id="iconFile" accept="image/*" style="width:auto">
+      </label>
+      <button class="small danger" id="iconClear">No icon</button>
+      <span class="stat" id="iconStat"></span>
+    </div>
+    <div id="iconGrid"></div>
   </div>
 </div>
 <div class="toastwrap" id="toasts"></div>

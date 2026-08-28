@@ -141,6 +141,11 @@ async function adminTests() {
 
   const st = await api('/api/admin/state', {}, adminToken);
   eq(st.status, 200, 'admin state readable');
+  const allTags = {};
+  (st.body.filterGroups || []).forEach((g) => { allTags[g.id] = g.tags.slice(); });
+  const defTags = await api('/api/admin/defaults', { method: 'POST', body: JSON.stringify({ tagFilters: allTags }) }, adminToken);
+  eq(defTags.status, 200, 'lobby defaults can preselect every tag');
+  ok(Object.keys(defTags.body.defaults.tagFilters).length >= 2, 'and they are stored');
   const total = st.body.words.length;
   ok(total > 250, 'word list has ' + total + ' entries');
   ok(st.body.words.some((w) => w.word === 'Percival' && /uef/i.test(w.hint + w.tags.join(' '))), 'Percival present with a note');
@@ -153,6 +158,28 @@ async function adminTests() {
   eq(st.body.words.filter((w) => /T2 Point Defense$/i.test(w.word)).length, 4, 'T2 point defense is per faction');
   eq(st.body.words.filter((w) => /Anti-Air$/i.test(w.word)).length, 12, 'anti air is per faction and tier');
   ok(st.body.words.filter((w) => w.tags.indexOf('nomads') !== -1).every((w) => !w.enabled), 'nomads shipped disabled');
+
+  // every unit word should have picked up its icon from the shipped database
+  const withIcon = st.body.words.filter((w) => w.icon);
+  ok(withIcon.length > 250, withIcon.length + ' words were matched to a unit icon automatically');
+  const perci = st.body.words.find((w) => w.word === 'Percival');
+  eq(perci.icon, 'units/XEL0305.png', 'Percival got the right icon');
+  eq(st.body.words.find((w) => w.word === 'Mass Extractor').icon, 'units/UEB1103.png', 'a collapsed building got one too');
+  eq(st.body.words.find((w) => w.word === 'UEF T1 Anti-Air').icon, 'units/UEB2104.png', 'and a per faction turret');
+  const icons = await api('/api/admin/icons', {}, adminToken);
+  ok(icons.body.builtin.length > 500, icons.body.builtin.length + ' icons available to pick from');
+  ok(icons.body.builtin.indexOf('units/UEL0401.png') !== -1, 'the Fatboy icon is one of them');
+
+  const px = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+  const up = await api('/api/admin/icons/upload', {
+    method: 'POST', body: JSON.stringify({ dataUrl: 'data:image/png;base64,' + px, name: 'Setons Clutch' })
+  }, adminToken);
+  eq(up.status, 200, 'an image uploads');
+  ok(/^custom\/setons-clutch-[0-9a-f]{8}\.png$/.test(up.body.icon), 'and lands under a safe name: ' + up.body.icon);
+  const served = await fetch(BASE + '/icons/' + up.body.icon);
+  eq(served.status, 200, 'the uploaded icon is served back');
+  const notImage = await api('/api/admin/icons/upload', { method: 'POST', body: JSON.stringify({ dataUrl: 'data:text/html;base64,PHNjcmlwdD4=' }) }, adminToken);
+  eq(notImage.status, 400, 'a non image upload is refused');
 
   const add = await api('/api/admin/words', {
     method: 'POST',
@@ -169,6 +196,13 @@ async function adminTests() {
 
   const blank = await api('/api/admin/words', { method: 'PUT', body: JSON.stringify({ id: id, word: '  ' }) }, adminToken);
   eq(blank.status, 400, 'empty word rejected');
+
+  const badIcon = await api('/api/admin/words', { method: 'PUT', body: JSON.stringify({ id: id, icon: '../../server.js' }) }, adminToken);
+  eq(badIcon.status, 400, 'an icon path that escapes the folder is refused');
+  const setIcon = await api('/api/admin/words', { method: 'PUT', body: JSON.stringify({ id: id, icon: 'units/UEL0401.png' }) }, adminToken);
+  eq(setIcon.body.word.icon, 'units/UEL0401.png', 'an icon can be assigned by hand');
+  const clrIcon = await api('/api/admin/words', { method: 'PUT', body: JSON.stringify({ id: id, icon: '' }) }, adminToken);
+  eq(clrIcon.body.word.icon, '', 'and cleared again');
 
   const bulk = await api('/api/admin/words/bulk', {
     method: 'POST', body: JSON.stringify({ ids: [id], action: 'enable' })
@@ -236,12 +270,30 @@ async function adminTests() {
 
   const re = await api('/api/admin/words/reseed', { method: 'POST' }, adminToken);
   eq(re.status, 404, 'the reset-to-shipped-list endpoint is gone');
+
+  // Nothing an admin can post is allowed to wipe the list.
+  const countBefore = (await api('/api/admin/state', {}, adminToken)).body.words.length;
   const replace = await api('/api/admin/words/import', {
-    method: 'POST', body: JSON.stringify({ text: JSON.stringify(expJson), mode: 'replace' })
+    method: 'POST', body: JSON.stringify({ text: 'Only One Word', mode: 'replace' })
   }, adminToken);
-  eq(replace.body.replaced, true, 'a full JSON export can be imported back as a replace');
+  eq(replace.status, 200, 'an import asking to replace still succeeds');
+  ok(replace.body.replaced === undefined, 'but it does not report a replace');
+  const afterReplace = (await api('/api/admin/state', {}, adminToken)).body.words;
+  eq(afterReplace.length, countBefore + 1, 'and it merely added one word instead of wiping ' + countBefore);
+  ok(afterReplace.some((w) => w.word === 'Percival'), 'the existing list is untouched');
+  await api('/api/admin/words', {
+    method: 'DELETE',
+    body: JSON.stringify({ ids: afterReplace.filter((w) => w.word === 'Only One Word').map((w) => w.id) })
+  }, adminToken);
+
+  // re-importing a full export is a no-op rather than a restore, every word is a duplicate
+  const back = await api('/api/admin/words/import', {
+    method: 'POST', body: JSON.stringify({ text: JSON.stringify(expJson) })
+  }, adminToken);
+  eq(back.body.added, 0, 're-importing a full export adds nothing new');
+  eq(back.body.skipped, expJson.length, 'every one of its ' + expJson.length + ' words is skipped as a duplicate');
   const after = await api('/api/admin/state', {}, adminToken);
-  eq(after.body.words.length, expJson.length, 'restoring from an export gives the list back');
+  eq(after.body.words.length, expJson.length, 'and the list is unchanged by it');
 
   const defs = await api('/api/admin/defaults', {
     method: 'POST', body: JSON.stringify({ rounds: 4, drawTime: 45, wordChoices: 2 })
@@ -302,6 +354,8 @@ async function gameTests() {
   eq(guessers[0].find((m) => m.t === 'choices'), null, 'guessers do not get the choices');
   ok(Array.isArray(choices.hints) && choices.hints.length === 3 && choices.hints.every((h) => h && h.length > 2),
     'the drawer is told what each unit is: ' + choices.hints[0]);
+  ok(Array.isArray(choices.icons) && choices.icons.length === 3 &&
+    choices.icons.some((i) => /^units\//.test(i)), 'and gets a picture for the choices: ' + choices.icons.join(', '));
   const gChoose = guessers[0].find((m) => m.t === 'state' && m.state === 'choosing');
   eq(gChoose.choosing, null, 'guessers get no word list while the drawer picks');
   eq(gChoose.choosingHints, null, 'and no notes either');
@@ -315,6 +369,9 @@ async function gameTests() {
   eq(gs.mask.length, word.length, 'mask keeps the word length');
   const ds = drawer.find((m) => m.t === 'state' && m.state === 'drawing');
   eq(ds.word, word, 'drawer sees the word');
+  ok(typeof ds.wordIcon === 'string', 'the drawer is sent the reference picture: ' + ds.wordIcon);
+  eq(gs.wordIcon, null, 'guessers are not');
+  eq(gs.choosingIcons, null, 'and never saw the choice pictures either');
 
   // drawing is relayed to the others, and only from the drawer
   guessers[0].clear();
@@ -388,6 +445,7 @@ async function gameTests() {
   guessers[1].send({ t: 'chat', text: word });
   const te = await drawer.wait((m) => m.t === 'turnend', 8000);
   eq(te.word, word, 'turn end reveals the word');
+  ok(typeof te.icon === 'string', 'and the picture, now that the word is out: ' + te.icon);
   ok(te.hint === undefined, 'the admin note is never sent to players');
   const drawerRow = te.results.find((r) => r.id === drawerId);
   ok(drawerRow.delta > 0, 'drawer scored ' + drawerRow.delta + ' when everyone guessed');
@@ -528,9 +586,8 @@ async function edgeTests() {
   const fw = fd.find((m) => m.t === 'state' && m.state === 'drawing').word;
   const stAll = await api('/api/admin/state', {}, adminToken);
   const entry = stAll.body.words.find((w) => w.word === fw);
-  ok(entry && entry.tags.indexOf('air') !== -1 &&
-    (entry.tags.indexOf('seraphim') !== -1 || entry.tags.indexOf('neutral') !== -1),
-    'faction and type filter respected, got ' + fw + ' [' + (entry ? entry.tags.join(' ') : '?') + ']');
+  ok(entry && (entry.tags.indexOf('air') !== -1 || entry.tags.indexOf('seraphim') !== -1),
+    'selecting seraphim and air offers either, got ' + fw + ' [' + (entry ? entry.tags.join(' ') : '?') + ']');
   f1.close(); f2.close();
   await sleep(200);
 }
@@ -587,12 +644,29 @@ async function extraTests() {
   const offered = (await (ff1.find((m) => m.t === 'choices') ? ff1 : ff2).wait((m) => m.t === 'choices', 4000)).words;
   const all = (await api('/api/admin/state', {}, adminToken)).body.words;
   const tagsOf = (w) => (all.find((x) => x.word === w) || { tags: [] }).tags;
-  const bad = offered.filter((w) => {
-    const t = tagsOf(w);
-    return t.indexOf('uef') === -1 && t.indexOf('neutral') === -1;
-  });
-  eq(bad.length, 0, 'a uef filter offers only uef and faction-less words: ' + offered.join(', '));
+  const bad = offered.filter((w) => tagsOf(w).indexOf('uef') === -1);
+  eq(bad.length, 0, 'selecting uef offers only uef words: ' + offered.join(', '));
   ff1.close(); ff2.close();
+  await sleep(200);
+
+  // tags are opt in: a lobby with nothing selected is not playable
+  const oi1 = await join('OptIn', { create: true, settings: { tagFilters: {} } });
+  const oi2 = await join('OptIn2', { code: oi1.code });
+  await sleep(200);
+  eq(oi1.state().poolSize, 0, 'nothing selected means nothing in play');
+  oi1.send({ t: 'start' });
+  await sleep(400);
+  eq(oi1.state().state, 'lobby', 'and the game will not start');
+  const pick = {};
+  (oi1.state().filterGroups || []).forEach((g) => { if (g.id === 'kind') pick[g.id] = ['naval']; });
+  oi1.clear();
+  oi1.send({ t: 'settings', settings: { tagFilters: pick } });
+  const oiSet = await oi1.wait((m) => m.t === 'settings', 3000);
+  ok(oiSet.poolSize > 20, 'selecting naval alone is enough to play, ' + oiSet.poolSize + ' words');
+  oi1.send({ t: 'start' });
+  const oiSt = await oi1.wait((m) => m.t === 'state' && m.state !== 'lobby', 6000);
+  ok(!!oiSt, 'and the game starts');
+  oi1.close(); oi2.close();
   await sleep(200);
 
   // an abandoned lobby closes itself
@@ -628,8 +702,13 @@ async function extraTests() {
   const pc1 = await join('Pool', { create: true });
   const pc2 = await join('Pool2', { code: pc1.code });
   await sleep(200);
-  const total = (await api('/api/config')).body.words;
-  eq(pc1.state().poolSize, total, 'an unfiltered lobby reports the whole word list');
+  const cfgNow = (await api('/api/config')).body;
+  const allWords = (await api('/api/admin/state', {}, adminToken)).body.words;
+  const groupTags = new Set();
+  cfgNow.filterGroups.forEach((g) => g.tags.forEach((t) => groupTags.add(t)));
+  const total = allWords.filter((w) => w.enabled && w.tags.some((t) => groupTags.has(t))).length;
+  ok(total > 200 && total <= cfgNow.words, 'the taggable pool is ' + total + ' of ' + cfgNow.words + ' enabled words');
+  eq(pc1.state().poolSize, total, 'a lobby with every tag on reports all of them');
   ok(Array.isArray(pc1.state().filterGroups) && pc1.state().filterGroups.length >= 2, 'the lobby is told what the filter groups are');
   ok(pc1.state().tagCounts && pc1.state().tagCounts.uef > 0, 'and how many words each tag has');
   pc1.clear();
@@ -642,7 +721,13 @@ async function extraTests() {
   pc1.clear();
   pc1.send({ t: 'settings', settings: { tagFilters: {} } });
   const sm2 = await pc1.wait((m) => m.t === 'settings', 3000);
-  eq(sm2.poolSize, total, 'clearing the filters restores the full pool');
+  eq(sm2.poolSize, 0, 'clearing every tag leaves nothing in play, tags are opt in');
+  const everything = {};
+  cfgNow.filterGroups.forEach((g) => { everything[g.id] = g.tags.slice(); });
+  pc1.clear();
+  pc1.send({ t: 'settings', settings: { tagFilters: everything } });
+  const sm3 = await pc1.wait((m) => m.t === 'settings', 3000);
+  eq(sm3.poolSize, total, 'selecting everything puts the whole list back in play');
   pc1.close(); pc2.close();
   await sleep(200);
 
