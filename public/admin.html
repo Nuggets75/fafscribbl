@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>fafscribbl admin</title>
+<link rel="icon" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+<style>
+  body{overflow:auto}
+  .wrap{max-width:1240px;margin:0 auto;padding:18px}
+  .tabs{display:flex;gap:8px;margin:14px 0}
+  .tab{padding:8px 14px;border-radius:8px;background:var(--panel2);cursor:pointer;border:1px solid var(--line)}
+  .tab.on{border-color:var(--accent);background:#2b2019}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+  th{color:var(--dim);font-size:12px;text-transform:uppercase;letter-spacing:.5px;position:sticky;top:0;background:var(--panel);z-index:2}
+  td input[type=text]{padding:5px 7px;font-size:13.5px}
+  td.c{width:28px}
+  tr.dis{opacity:.5}
+  tr.saved{background:#16301c55}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .bar input[type=text]{width:220px}
+  .bar select{width:auto}
+  .stat{color:var(--dim);font-size:13px}
+  .pager{display:flex;gap:6px;align-items:center;justify-content:center;margin:12px 0}
+  textarea{min-height:140px;font-family:ui-monospace,Consolas,monospace;font-size:13px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  .danger{background:var(--bad);color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="logo" style="font-size:28px">faf<span>scribbl</span> admin</h1>
+
+  <div id="login" class="card" style="max-width:420px">
+    <div class="field">
+      <label for="pw">Admin password</label>
+      <input id="pw" type="password" autocomplete="current-password">
+    </div>
+    <button class="primary" id="loginBtn" style="width:100%">Log in</button>
+    <div class="err" id="loginErr"></div>
+    <p class="hint">Set with the ADMIN_PASSWORD environment variable on the container.</p>
+  </div>
+
+  <div id="panel" class="hide">
+    <div class="tabs">
+      <div class="tab on" data-tab="words">Words</div>
+      <div class="tab" data-tab="defaults">Lobby defaults</div>
+      <div class="tab" data-tab="rooms">Live lobbies</div>
+      <div class="tab" data-tab="io">Import / export</div>
+      <div style="flex:1"></div>
+      <button class="ghost small" id="logoutBtn">Log out</button>
+      <a class="tab" href="/">Back to the game</a>
+    </div>
+
+    <!-- ------------------------------------------------ words -->
+    <section id="tab-words">
+      <div class="card" style="margin-bottom:14px">
+        <h3 style="margin:0 0 10px;font-size:16px">Add a word</h3>
+        <div class="bar">
+          <input type="text" id="newWord" placeholder="Word, e.g. Percival">
+          <input type="text" id="newHint" placeholder="Bracket note, e.g. T3 UEF assault bot" style="width:280px">
+          <input type="text" id="newAliases" placeholder="Also accepted, comma separated" style="width:230px">
+          <input type="text" id="newTags" placeholder="tags: uef land t3" style="width:180px">
+          <button class="primary" id="addBtn">Add</button>
+        </div>
+        <p class="hint">The bracket note is only ever shown here in the admin list and on the reveal screen after a turn. Players never see it while guessing.</p>
+      </div>
+
+      <div class="card">
+        <div class="bar">
+          <input type="text" id="search" placeholder="Search word, note or tag">
+          <select id="filterState">
+            <option value="all">All</option>
+            <option value="on">Enabled only</option>
+            <option value="off">Disabled only</option>
+          </select>
+          <select id="filterTag"><option value="">Any tag</option></select>
+          <span class="stat" id="counts"></span>
+          <div style="flex:1"></div>
+          <select id="pageSize">
+            <option value="50">50 per page</option>
+            <option value="100" selected>100 per page</option>
+            <option value="0">Show all</option>
+          </select>
+        </div>
+        <div class="bar">
+          <button class="small" id="selAll">Select page</button>
+          <button class="small" id="selNone">Clear selection</button>
+          <span class="stat" id="selCount">0 selected</span>
+          <button class="small" id="bulkOn">Enable</button>
+          <button class="small" id="bulkOff">Disable</button>
+          <button class="small danger" id="bulkDel">Delete</button>
+          <input type="text" id="bulkTag" placeholder="tag" style="width:110px">
+          <button class="small" id="bulkAddTag">Add tag</button>
+          <button class="small" id="bulkRmTag">Remove tag</button>
+        </div>
+        <div style="overflow:auto;max-height:64vh">
+          <table>
+            <thead><tr>
+              <th class="c"></th><th style="width:22%">Word</th><th style="width:30%">Note (admin only)</th>
+              <th style="width:22%">Also accepted</th><th style="width:16%">Tags</th><th class="c">On</th><th class="c"></th>
+            </tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div class="pager" id="pager"></div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------ defaults -->
+    <section id="tab-defaults" class="hide">
+      <div class="card" style="max-width:560px">
+        <h3 style="margin:0 0 4px;font-size:16px">Default lobby settings</h3>
+        <p class="hint">Used for every newly created lobby. The host can still change them.</p>
+        <div class="settings">
+          <div><label>Rounds</label><input type="number" id="dRounds" min="1" max="20"></div>
+          <div><label>Draw time in seconds (0 = off)</label><input type="number" id="dTime" min="0" max="600"></div>
+          <div><label>Max players (0 = unlimited)</label><input type="number" id="dMax" min="0" max="60"></div>
+          <div><label>Word choices</label><input type="number" id="dChoices" min="1" max="5"></div>
+          <div><label>Letter hints</label><input type="number" id="dHints" min="0" max="5"></div>
+          <div><label>Word choice time</label><input type="number" id="dChoiceTime" min="5" max="60"></div>
+        </div>
+        <button class="primary" id="saveDefaults">Save defaults</button>
+        <span class="stat" id="defSaved"></span>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------ rooms -->
+    <section id="tab-rooms" class="hide">
+      <div class="card">
+        <div class="bar"><button class="small" id="refreshRooms">Refresh</button><span class="stat" id="roomStat"></span></div>
+        <table><thead><tr><th>Code</th><th>State</th><th>Round</th><th>Players</th><th>Current word</th><th></th></tr></thead>
+        <tbody id="roomRows"></tbody></table>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------ io -->
+    <section id="tab-io" class="hide">
+      <div class="grid2">
+        <div class="card">
+          <h3 style="margin:0 0 4px;font-size:16px">Import</h3>
+          <p class="hint">One word per line: <span class="mono">Word | note | alias, alias | tags</span><br>
+          Everything after the word is optional. A full JSON export also works.</p>
+          <textarea id="importText" placeholder="Percival | T3 UEF assault bot | Perci | uef land t3"></textarea>
+          <div class="bar" style="margin-top:10px">
+            <select id="importMode">
+              <option value="merge">Add to the list, skip duplicates</option>
+              <option value="replace">Replace the whole list</option>
+            </select>
+            <button class="primary" id="importBtn">Import</button>
+            <span class="stat" id="importStat"></span>
+          </div>
+        </div>
+        <div class="card">
+          <h3 style="margin:0 0 4px;font-size:16px">Export and reset</h3>
+          <p class="hint">Export gives you the full JSON, including disabled words.</p>
+          <button id="exportBtn">Download the word list</button>
+          <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+          <p class="hint">Reset throws away every change and reloads the list that ships with the repo.</p>
+          <button class="danger" id="reseedBtn">Reset to the shipped list</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+<div class="toastwrap" id="toasts"></div>
+<script src="/admin.js"></script>
+</body>
+</html>

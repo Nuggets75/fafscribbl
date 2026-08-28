@@ -1,0 +1,25 @@
+name: fafscribbl
+services:
+  app:
+    image: node:20-alpine
+    container_name: fafscribbl
+    restart: unless-stopped
+    ports:
+      - "8092:8092"
+    volumes:
+      - fafscribbl_data:/data
+    environment:
+      - DATA_DIR=/data
+      - PORT=8092
+      # CHANGE THIS to your admin password:
+      - ADMIN_PASSWORD=change-me
+      # CHANGE THIS to your GitHub repo URL:
+      - REPO=https://github.com/Nuggets75/fafscribbl.git
+    command: >
+      sh -c "apk add --no-cache git >/dev/null 2>&1 &&
+             rm -rf /srv/app &&
+             git clone --depth 1 $$REPO /srv/app &&
+             node /srv/app/server.js"
+
+volumes:
+  fafscribbl_data:

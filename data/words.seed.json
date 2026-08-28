@@ -1,0 +1,3661 @@
+[
+ {
+  "word": "Mercy",
+  "hint": "T2 Aeon guided missile",
+  "tags": [
+   "aeon",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w1"
+ },
+ {
+  "word": "Absolver",
+  "hint": "T3 Aeon shield disruptor",
+  "tags": [
+   "aeon",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w2"
+ },
+ {
+  "word": "Redeemer",
+  "hint": "T3 Aeon mobile missile anti-air",
+  "tags": [
+   "aeon",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w3"
+ },
+ {
+  "word": "Janus",
+  "hint": "T2 UEF fighter/bomber",
+  "tags": [
+   "uef",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w4"
+ },
+ {
+  "word": "Mongoose",
+  "hint": "T2 UEF gatling bot",
+  "tags": [
+   "uef",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w5"
+ },
+ {
+  "word": "Cougar",
+  "hint": "T3 UEF mobile rapid-fire aa cannon",
+  "tags": [
+   "uef",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w6"
+ },
+ {
+  "word": "Corsair",
+  "hint": "T2 Cybran fighter/bomber",
+  "tags": [
+   "cybran",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w7"
+ },
+ {
+  "word": "Hoplite",
+  "hint": "T2 Cybran rocket bot",
+  "tags": [
+   "cybran",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w8"
+ },
+ {
+  "word": "Bouncer",
+  "hint": "T3 Cybran mobile missile anti-air",
+  "tags": [
+   "cybran",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w9"
+ },
+ {
+  "word": "Uyanah",
+  "hint": "T3 Seraphim lightning tank",
+  "tags": [
+   "seraphim",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w10"
+ },
+ {
+  "word": "Mirage",
+  "hint": "T1 Aeon air scout",
+  "tags": [
+   "aeon",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w11"
+ },
+ {
+  "word": "Conservator",
+  "hint": "T1 Aeon interceptor",
+  "tags": [
+   "aeon",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w12"
+ },
+ {
+  "word": "Shimmer",
+  "hint": "T1 Aeon attack bomber",
+  "tags": [
+   "aeon",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w13"
+ },
+ {
+  "word": "Aluminar",
+  "hint": "T2 Aeon air transport",
+  "tags": [
+   "aeon",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w14"
+ },
+ {
+  "word": "Chariot",
+  "hint": "T1 Aeon light air transport",
+  "tags": [
+   "aeon",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w15"
+ },
+ {
+  "word": "Specter",
+  "hint": "T2 Aeon gunship",
+  "tags": [
+   "aeon",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w16"
+ },
+ {
+  "word": "Skimmer",
+  "hint": "T2 Aeon torpedo bomber",
+  "tags": [
+   "aeon",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w17"
+ },
+ {
+  "word": "Seer",
+  "hint": "T3 Aeon spy plane",
+  "tags": [
+   "aeon",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w18"
+ },
+ {
+  "word": "Corona",
+  "hint": "T3 Aeon air superiority fighter",
+  "tags": [
+   "aeon",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w19"
+ },
+ {
+  "word": "Shocker",
+  "hint": "T3 Aeon strategic bomber",
+  "tags": [
+   "aeon",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w20"
+ },
+ {
+  "word": "CZAR",
+  "hint": "Experimental Aeon aircraft carrier",
+  "tags": [
+   "aeon",
+   "air",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w21"
+ },
+ {
+  "word": "Spirit",
+  "hint": "T1 Aeon land scout",
+  "tags": [
+   "aeon",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w22"
+ },
+ {
+  "word": "Fervor",
+  "hint": "T1 Aeon mobile light artillery",
+  "tags": [
+   "aeon",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w23"
+ },
+ {
+  "word": "Thistle",
+  "hint": "T1 Aeon mobile anti-air gun",
+  "tags": [
+   "aeon",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w24"
+ },
+ {
+  "word": "Flare",
+  "hint": "T1 Aeon light assault bot",
+  "tags": [
+   "aeon",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w25"
+ },
+ {
+  "word": "Evensong",
+  "hint": "T2 Aeon mobile missile launcher",
+  "tags": [
+   "aeon",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w26"
+ },
+ {
+  "word": "Aurora",
+  "hint": "T1 Aeon light tank",
+  "tags": [
+   "aeon",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w27"
+ },
+ {
+  "word": "Obsidian",
+  "hint": "T2 Aeon heavy tank",
+  "tags": [
+   "aeon",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w28"
+ },
+ {
+  "word": "Ascendant",
+  "hint": "T2 Aeon mobile aa flak artillery",
+  "tags": [
+   "aeon",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w29"
+ },
+ {
+  "word": "Harbinger",
+  "hint": "T3 Aeon heavy assault bot",
+  "tags": [
+   "aeon",
+   "land",
+   "t3"
+  ],
+  "aliases": [
+   "Harbinger Mark IV"
+  ],
+  "enabled": true,
+  "id": "w30"
+ },
+ {
+  "word": "Serenity",
+  "hint": "T3 Aeon mobile heavy artillery",
+  "tags": [
+   "aeon",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w31"
+ },
+ {
+  "word": "Asylum",
+  "hint": "T2 Aeon mobile shield generator",
+  "tags": [
+   "aeon",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w32"
+ },
+ {
+  "word": "Galactic Colossus",
+  "hint": "Experimental Aeon assault bot",
+  "tags": [
+   "aeon",
+   "land",
+   "experimental"
+  ],
+  "aliases": [
+   "Colossus",
+   "GC"
+  ],
+  "enabled": true,
+  "id": "w33"
+ },
+ {
+  "word": "Shard",
+  "hint": "T1 Aeon air attack boat",
+  "tags": [
+   "aeon",
+   "naval",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w34"
+ },
+ {
+  "word": "Beacon",
+  "hint": "T1 Aeon frigate",
+  "tags": [
+   "aeon",
+   "naval",
+   "t1"
+  ],
+  "aliases": [
+   "Beacon Class"
+  ],
+  "enabled": true,
+  "id": "w35"
+ },
+ {
+  "word": "Exodus",
+  "hint": "T2 Aeon destroyer",
+  "tags": [
+   "aeon",
+   "naval",
+   "t2"
+  ],
+  "aliases": [
+   "Exodus Class"
+  ],
+  "enabled": true,
+  "id": "w36"
+ },
+ {
+  "word": "Infinity",
+  "hint": "T2 Aeon cruiser",
+  "tags": [
+   "aeon",
+   "naval",
+   "t2"
+  ],
+  "aliases": [
+   "Infinity Class"
+  ],
+  "enabled": true,
+  "id": "w37"
+ },
+ {
+  "word": "Sylph",
+  "hint": "T1 Aeon attack submarine",
+  "tags": [
+   "aeon",
+   "naval",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w38"
+ },
+ {
+  "word": "Omen",
+  "hint": "T3 Aeon battleship",
+  "tags": [
+   "aeon",
+   "naval",
+   "t3"
+  ],
+  "aliases": [
+   "Omen Class"
+  ],
+  "enabled": true,
+  "id": "w39"
+ },
+ {
+  "word": "Keefer",
+  "hint": "T3 Aeon aircraft carrier",
+  "tags": [
+   "aeon",
+   "naval",
+   "t3"
+  ],
+  "aliases": [
+   "Keefer Class"
+  ],
+  "enabled": true,
+  "id": "w40"
+ },
+ {
+  "word": "Silencer",
+  "hint": "T3 Aeon strategic missile submarine",
+  "tags": [
+   "aeon",
+   "naval",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w41"
+ },
+ {
+  "word": "Tempest",
+  "hint": "Experimental Aeon battleship",
+  "tags": [
+   "aeon",
+   "naval",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w42"
+ },
+ {
+  "word": "Rover",
+  "hint": "UEF engineering drone (any tech)",
+  "tags": [
+   "uef",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w43"
+ },
+ {
+  "word": "Hummingbird",
+  "hint": "T1 UEF air scout",
+  "tags": [
+   "uef",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w44"
+ },
+ {
+  "word": "Cyclone",
+  "hint": "T1 UEF interceptor",
+  "tags": [
+   "uef",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w45"
+ },
+ {
+  "word": "Scorcher",
+  "hint": "T1 UEF attack bomber",
+  "tags": [
+   "uef",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w46"
+ },
+ {
+  "word": "Star Lifter",
+  "hint": "T2 UEF air transport",
+  "tags": [
+   "uef",
+   "air",
+   "t2"
+  ],
+  "aliases": [
+   "C14 Star Lifter",
+   "Starlifter"
+  ],
+  "enabled": true,
+  "id": "w47"
+ },
+ {
+  "word": "Courier",
+  "hint": "T1 UEF light air transport",
+  "tags": [
+   "uef",
+   "air",
+   "t1"
+  ],
+  "aliases": [
+   "C-6 Courier"
+  ],
+  "enabled": true,
+  "id": "w48"
+ },
+ {
+  "word": "Stinger",
+  "hint": "T2 UEF gunship",
+  "tags": [
+   "uef",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w49"
+ },
+ {
+  "word": "Stork",
+  "hint": "T2 UEF torpedo bomber",
+  "tags": [
+   "uef",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w50"
+ },
+ {
+  "word": "Blackbird",
+  "hint": "T3 UEF spy plane",
+  "tags": [
+   "uef",
+   "air",
+   "t3"
+  ],
+  "aliases": [
+   "SR90 Blackbird"
+  ],
+  "enabled": true,
+  "id": "w51"
+ },
+ {
+  "word": "Wasp",
+  "hint": "T3 UEF air superiority fighter",
+  "tags": [
+   "uef",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w52"
+ },
+ {
+  "word": "Ambassador",
+  "hint": "T3 UEF strategic bomber",
+  "tags": [
+   "uef",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w53"
+ },
+ {
+  "word": "Broadsword",
+  "hint": "T3 UEF heavy gunship",
+  "tags": [
+   "uef",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w54"
+ },
+ {
+  "word": "Snoop",
+  "hint": "T1 UEF land scout",
+  "tags": [
+   "uef",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w55"
+ },
+ {
+  "word": "Lobo",
+  "hint": "T1 UEF mobile light artillery",
+  "tags": [
+   "uef",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w56"
+ },
+ {
+  "word": "Archer",
+  "hint": "T1 UEF mobile anti-air gun",
+  "tags": [
+   "uef",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w57"
+ },
+ {
+  "word": "Mech Marine",
+  "hint": "T1 UEF light assault bot",
+  "tags": [
+   "uef",
+   "land",
+   "t1"
+  ],
+  "aliases": [
+   "Mech Marines"
+  ],
+  "enabled": true,
+  "id": "w58"
+ },
+ {
+  "word": "Flapjack",
+  "hint": "T2 UEF mobile missile launcher",
+  "tags": [
+   "uef",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w59"
+ },
+ {
+  "word": "Striker",
+  "hint": "T1 UEF medium tank",
+  "tags": [
+   "uef",
+   "land",
+   "t1"
+  ],
+  "aliases": [
+   "MA12 Striker"
+  ],
+  "enabled": true,
+  "id": "w60"
+ },
+ {
+  "word": "Pillar",
+  "hint": "T2 UEF heavy tank",
+  "tags": [
+   "uef",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w61"
+ },
+ {
+  "word": "Riptide",
+  "hint": "T2 UEF amphibious tank",
+  "tags": [
+   "uef",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w62"
+ },
+ {
+  "word": "Sky Boxer",
+  "hint": "T2 UEF mobile aa flak artillery",
+  "tags": [
+   "uef",
+   "land",
+   "t2"
+  ],
+  "aliases": [
+   "Skyboxer"
+  ],
+  "enabled": true,
+  "id": "w63"
+ },
+ {
+  "word": "Titan",
+  "hint": "T3 UEF heavy assault bot",
+  "tags": [
+   "uef",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w64"
+ },
+ {
+  "word": "Demolisher",
+  "hint": "T3 UEF mobile heavy artillery",
+  "tags": [
+   "uef",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w65"
+ },
+ {
+  "word": "Parashield",
+  "hint": "T2 UEF mobile shield generator",
+  "tags": [
+   "uef",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w66"
+ },
+ {
+  "word": "Fatboy",
+  "hint": "Experimental UEF mobile factory",
+  "tags": [
+   "uef",
+   "land",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w67"
+ },
+ {
+  "word": "Thunderhead",
+  "hint": "T1 UEF frigate",
+  "tags": [
+   "uef",
+   "naval",
+   "t1"
+  ],
+  "aliases": [
+   "Thunderhead Class"
+  ],
+  "enabled": true,
+  "id": "w68"
+ },
+ {
+  "word": "Valiant",
+  "hint": "T2 UEF destroyer",
+  "tags": [
+   "uef",
+   "naval",
+   "t2"
+  ],
+  "aliases": [
+   "Valiant Class"
+  ],
+  "enabled": true,
+  "id": "w69"
+ },
+ {
+  "word": "Governor",
+  "hint": "T2 UEF cruiser",
+  "tags": [
+   "uef",
+   "naval",
+   "t2"
+  ],
+  "aliases": [
+   "Governor Class"
+  ],
+  "enabled": true,
+  "id": "w70"
+ },
+ {
+  "word": "Tigershark",
+  "hint": "T1 UEF attack submarine",
+  "tags": [
+   "uef",
+   "naval",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w71"
+ },
+ {
+  "word": "Summit",
+  "hint": "T3 UEF battleship",
+  "tags": [
+   "uef",
+   "naval",
+   "t3"
+  ],
+  "aliases": [
+   "Summit Class"
+  ],
+  "enabled": true,
+  "id": "w72"
+ },
+ {
+  "word": "Ace",
+  "hint": "T3 UEF strategic missile submarine",
+  "tags": [
+   "uef",
+   "naval",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w73"
+ },
+ {
+  "word": "Atlantis",
+  "hint": "Experimental UEF aircraft carrier",
+  "tags": [
+   "uef",
+   "naval",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w74"
+ },
+ {
+  "word": "Flying Eyes",
+  "hint": "T1 Cybran air scout",
+  "tags": [
+   "cybran",
+   "air",
+   "t1"
+  ],
+  "aliases": [
+   "Flying Eye"
+  ],
+  "enabled": true,
+  "id": "w75"
+ },
+ {
+  "word": "Prowler",
+  "hint": "T1 Cybran interceptor",
+  "tags": [
+   "cybran",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w76"
+ },
+ {
+  "word": "Zeus",
+  "hint": "T1 Cybran attack bomber",
+  "tags": [
+   "cybran",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w77"
+ },
+ {
+  "word": "Dragon Fly",
+  "hint": "T2 Cybran air transport",
+  "tags": [
+   "cybran",
+   "air",
+   "t2"
+  ],
+  "aliases": [
+   "Dragonfly"
+  ],
+  "enabled": true,
+  "id": "w78"
+ },
+ {
+  "word": "Skyhook",
+  "hint": "T1 Cybran light air transport",
+  "tags": [
+   "cybran",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w79"
+ },
+ {
+  "word": "Renegade",
+  "hint": "T2 Cybran gunship",
+  "tags": [
+   "cybran",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w80"
+ },
+ {
+  "word": "Cormorant",
+  "hint": "T2 Cybran torpedo bomber",
+  "tags": [
+   "cybran",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w81"
+ },
+ {
+  "word": "Spook",
+  "hint": "T3 Cybran spy plane",
+  "tags": [
+   "cybran",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w82"
+ },
+ {
+  "word": "Gemini",
+  "hint": "T3 Cybran air superiority fighter",
+  "tags": [
+   "cybran",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w83"
+ },
+ {
+  "word": "Revenant",
+  "hint": "T3 Cybran strategic bomber",
+  "tags": [
+   "cybran",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w84"
+ },
+ {
+  "word": "Soul Ripper",
+  "hint": "Experimental Cybran gunship",
+  "tags": [
+   "cybran",
+   "air",
+   "experimental"
+  ],
+  "aliases": [
+   "Soulripper"
+  ],
+  "enabled": true,
+  "id": "w85"
+ },
+ {
+  "word": "Mole",
+  "hint": "T1 Cybran land scout",
+  "tags": [
+   "cybran",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w86"
+ },
+ {
+  "word": "Medusa",
+  "hint": "T1 Cybran mobile light artillery",
+  "tags": [
+   "cybran",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w87"
+ },
+ {
+  "word": "Sky Slammer",
+  "hint": "T1 Cybran mobile anti-air gun",
+  "tags": [
+   "cybran",
+   "land",
+   "t1"
+  ],
+  "aliases": [
+   "Skyslammer"
+  ],
+  "enabled": true,
+  "id": "w88"
+ },
+ {
+  "word": "Hunter",
+  "hint": "T1 Cybran light assault bot",
+  "tags": [
+   "cybran",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w89"
+ },
+ {
+  "word": "Mantis",
+  "hint": "T1 Cybran assault bot",
+  "tags": [
+   "cybran",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w90"
+ },
+ {
+  "word": "Viper",
+  "hint": "T2 Cybran mobile missile launcher",
+  "tags": [
+   "cybran",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w91"
+ },
+ {
+  "word": "Rhino",
+  "hint": "T2 Cybran heavy tank",
+  "tags": [
+   "cybran",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w92"
+ },
+ {
+  "word": "Wagner",
+  "hint": "T2 Cybran amphibious tank",
+  "tags": [
+   "cybran",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w93"
+ },
+ {
+  "word": "Banger",
+  "hint": "T2 Cybran mobile aa flak artillery",
+  "tags": [
+   "cybran",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w94"
+ },
+ {
+  "word": "Loyalist",
+  "hint": "T3 Cybran siege assault bot",
+  "tags": [
+   "cybran",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w95"
+ },
+ {
+  "word": "Trebuchet",
+  "hint": "T3 Cybran mobile heavy artillery",
+  "tags": [
+   "cybran",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w96"
+ },
+ {
+  "word": "Deceiver",
+  "hint": "T2 Cybran mobile stealth field system",
+  "tags": [
+   "cybran",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w97"
+ },
+ {
+  "word": "Scathis",
+  "hint": "Experimental Cybran mobile rapid-fire artillery",
+  "tags": [
+   "cybran",
+   "land",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w98"
+ },
+ {
+  "word": "Monkeylord",
+  "hint": "Experimental Cybran spiderbot",
+  "tags": [
+   "cybran",
+   "land",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w99"
+ },
+ {
+  "word": "Trident",
+  "hint": "T1 Cybran frigate",
+  "tags": [
+   "cybran",
+   "naval",
+   "t1"
+  ],
+  "aliases": [
+   "Trident Class"
+  ],
+  "enabled": true,
+  "id": "w100"
+ },
+ {
+  "word": "Salem",
+  "hint": "T2 Cybran destroyer",
+  "tags": [
+   "cybran",
+   "naval",
+   "t2"
+  ],
+  "aliases": [
+   "Salem Class"
+  ],
+  "enabled": true,
+  "id": "w101"
+ },
+ {
+  "word": "Siren",
+  "hint": "T2 Cybran cruiser",
+  "tags": [
+   "cybran",
+   "naval",
+   "t2"
+  ],
+  "aliases": [
+   "Siren Class"
+  ],
+  "enabled": true,
+  "id": "w102"
+ },
+ {
+  "word": "Sliver",
+  "hint": "T1 Cybran attack submarine",
+  "tags": [
+   "cybran",
+   "naval",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w103"
+ },
+ {
+  "word": "Galaxy",
+  "hint": "T3 Cybran battleship",
+  "tags": [
+   "cybran",
+   "naval",
+   "t3"
+  ],
+  "aliases": [
+   "Galaxy Class"
+  ],
+  "enabled": true,
+  "id": "w104"
+ },
+ {
+  "word": "Command",
+  "hint": "T3 Cybran aircraft carrier",
+  "tags": [
+   "cybran",
+   "naval",
+   "t3"
+  ],
+  "aliases": [
+   "Command Class"
+  ],
+  "enabled": true,
+  "id": "w105"
+ },
+ {
+  "word": "Plan B",
+  "hint": "T3 Cybran strategic missile submarine",
+  "tags": [
+   "cybran",
+   "naval",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w106"
+ },
+ {
+  "word": "Swift Wind",
+  "hint": "T2 Aeon combat fighter",
+  "tags": [
+   "aeon",
+   "air",
+   "t2"
+  ],
+  "aliases": [
+   "Swiftwind"
+  ],
+  "enabled": true,
+  "id": "w107"
+ },
+ {
+  "word": "Restorer",
+  "hint": "T3 Aeon aa gunship",
+  "tags": [
+   "aeon",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w108"
+ },
+ {
+  "word": "Solace",
+  "hint": "T3 Aeon torpedo bomber",
+  "tags": [
+   "aeon",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w109"
+ },
+ {
+  "word": "Blaze",
+  "hint": "T2 Aeon assault tank",
+  "tags": [
+   "aeon",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w110"
+ },
+ {
+  "word": "Sprite Striker",
+  "hint": "T3 Aeon sniper bot",
+  "tags": [
+   "aeon",
+   "land",
+   "t3"
+  ],
+  "aliases": [
+   "Sprite"
+  ],
+  "enabled": true,
+  "id": "w111"
+ },
+ {
+  "word": "Vesper",
+  "hint": "T2 Aeon submarine hunter",
+  "tags": [
+   "aeon",
+   "naval",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w112"
+ },
+ {
+  "word": "Torrent",
+  "hint": "T3 Aeon missile ship",
+  "tags": [
+   "aeon",
+   "naval",
+   "t3"
+  ],
+  "aliases": [
+   "Torrent Class"
+  ],
+  "enabled": true,
+  "id": "w113"
+ },
+ {
+  "word": "Continental",
+  "hint": "T3 UEF heavy air transport",
+  "tags": [
+   "uef",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w114"
+ },
+ {
+  "word": "Sparky",
+  "hint": "T2 UEF field engineer",
+  "tags": [
+   "uef",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w115"
+ },
+ {
+  "word": "Percival",
+  "hint": "T3 UEF armored assault bot",
+  "tags": [
+   "uef",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w116"
+ },
+ {
+  "word": "Spearhead",
+  "hint": "T3 UEF mobile missile platform",
+  "tags": [
+   "uef",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w117"
+ },
+ {
+  "word": "Cooper",
+  "hint": "T2 UEF torpedo boat",
+  "tags": [
+   "uef",
+   "naval",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w118"
+ },
+ {
+  "word": "Bulwark",
+  "hint": "T2 UEF shield boat",
+  "tags": [
+   "uef",
+   "naval",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w119"
+ },
+ {
+  "word": "Neptune",
+  "hint": "T3 UEF battlecruiser",
+  "tags": [
+   "uef",
+   "naval",
+   "t3"
+  ],
+  "aliases": [
+   "Neptune Class"
+  ],
+  "enabled": true,
+  "id": "w120"
+ },
+ {
+  "word": "Jester",
+  "hint": "T1 Cybran light gunship",
+  "tags": [
+   "cybran",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w121"
+ },
+ {
+  "word": "Wailer",
+  "hint": "T3 Cybran heavy gunship",
+  "tags": [
+   "cybran",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w122"
+ },
+ {
+  "word": "Fire Beetle",
+  "hint": "T2 Cybran mobile bomb",
+  "tags": [
+   "cybran",
+   "land",
+   "t2"
+  ],
+  "aliases": [
+   "Firebeetle"
+  ],
+  "enabled": true,
+  "id": "w123"
+ },
+ {
+  "word": "Brick",
+  "hint": "T3 Cybran armored assault bot",
+  "tags": [
+   "cybran",
+   "land",
+   "t3"
+  ],
+  "aliases": [
+   "The Brick"
+  ],
+  "enabled": true,
+  "id": "w124"
+ },
+ {
+  "word": "Megalith",
+  "hint": "Experimental Cybran megabot",
+  "tags": [
+   "cybran",
+   "land",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w125"
+ },
+ {
+  "word": "Barracuda",
+  "hint": "T2 Cybran submarine killer",
+  "tags": [
+   "cybran",
+   "naval",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w126"
+ },
+ {
+  "word": "Mermaid",
+  "hint": "T2 Cybran counter-intelligence boat",
+  "tags": [
+   "cybran",
+   "naval",
+   "t2"
+  ],
+  "aliases": [
+   "CI:18 Mermaid"
+  ],
+  "enabled": true,
+  "id": "w127"
+ },
+ {
+  "word": "Sele-istle",
+  "hint": "T1 Seraphim air scout",
+  "tags": [
+   "seraphim",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w128"
+ },
+ {
+  "word": "Ia-atha",
+  "hint": "T1 Seraphim interceptor",
+  "tags": [
+   "seraphim",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w129"
+ },
+ {
+  "word": "Sinnve",
+  "hint": "T1 Seraphim attack bomber",
+  "tags": [
+   "seraphim",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w130"
+ },
+ {
+  "word": "Vishala",
+  "hint": "T2 Seraphim air transport",
+  "tags": [
+   "seraphim",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w131"
+ },
+ {
+  "word": "Vish",
+  "hint": "T1 Seraphim light air transport",
+  "tags": [
+   "seraphim",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w132"
+ },
+ {
+  "word": "Notha",
+  "hint": "T2 Seraphim fighter/bomber",
+  "tags": [
+   "seraphim",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w133"
+ },
+ {
+  "word": "Vulthoo",
+  "hint": "T2 Seraphim gunship",
+  "tags": [
+   "seraphim",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w134"
+ },
+ {
+  "word": "Uosioz",
+  "hint": "T2 Seraphim torpedo bomber",
+  "tags": [
+   "seraphim",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w135"
+ },
+ {
+  "word": "Iaselen",
+  "hint": "T3 Seraphim spy plane",
+  "tags": [
+   "seraphim",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w136"
+ },
+ {
+  "word": "Iazyne",
+  "hint": "T3 Seraphim air superiority fighter",
+  "tags": [
+   "seraphim",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w137"
+ },
+ {
+  "word": "Sinntha",
+  "hint": "T3 Seraphim strategic bomber",
+  "tags": [
+   "seraphim",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w138"
+ },
+ {
+  "word": "Ahwassa",
+  "hint": "Experimental Seraphim bomber",
+  "tags": [
+   "seraphim",
+   "air",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w139"
+ },
+ {
+  "word": "Selen",
+  "hint": "T1 Seraphim combat scout",
+  "tags": [
+   "seraphim",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w140"
+ },
+ {
+  "word": "Zthuee",
+  "hint": "T1 Seraphim mobile light artillery",
+  "tags": [
+   "seraphim",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w141"
+ },
+ {
+  "word": "Ia-istle",
+  "hint": "T1 Seraphim mobile anti-air gun",
+  "tags": [
+   "seraphim",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w142"
+ },
+ {
+  "word": "Ythisah",
+  "hint": "T2 Seraphim mobile missile launcher",
+  "tags": [
+   "seraphim",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w143"
+ },
+ {
+  "word": "Thaam",
+  "hint": "T1 Seraphim medium tank",
+  "tags": [
+   "seraphim",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w144"
+ },
+ {
+  "word": "Ilshavoh",
+  "hint": "T2 Seraphim assault bot",
+  "tags": [
+   "seraphim",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w145"
+ },
+ {
+  "word": "Yenzyne",
+  "hint": "T2 Seraphim hover tank",
+  "tags": [
+   "seraphim",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w146"
+ },
+ {
+  "word": "Iashavoh",
+  "hint": "T2 Seraphim mobile anti-air cannon",
+  "tags": [
+   "seraphim",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w147"
+ },
+ {
+  "word": "Othuum",
+  "hint": "T3 Seraphim siege tank",
+  "tags": [
+   "seraphim",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w148"
+ },
+ {
+  "word": "Suthanus",
+  "hint": "T3 Seraphim mobile heavy artillery",
+  "tags": [
+   "seraphim",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w149"
+ },
+ {
+  "word": "Usha-Ah",
+  "hint": "T3 Seraphim sniper bot",
+  "tags": [
+   "seraphim",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w150"
+ },
+ {
+  "word": "Athanah",
+  "hint": "T3 Seraphim mobile shield generator",
+  "tags": [
+   "seraphim",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w151"
+ },
+ {
+  "word": "Ythotha",
+  "hint": "Experimental Seraphim assault bot",
+  "tags": [
+   "seraphim",
+   "land",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w152"
+ },
+ {
+  "word": "Hau-esel",
+  "hint": "T1 Seraphim frigate",
+  "tags": [
+   "seraphim",
+   "naval",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w153"
+ },
+ {
+  "word": "Uashavoh",
+  "hint": "T2 Seraphim destroyer",
+  "tags": [
+   "seraphim",
+   "naval",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w154"
+ },
+ {
+  "word": "Ithalua",
+  "hint": "T2 Seraphim cruiser",
+  "tags": [
+   "seraphim",
+   "naval",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w155"
+ },
+ {
+  "word": "Sou-istle",
+  "hint": "T1 Seraphim attack submarine",
+  "tags": [
+   "seraphim",
+   "naval",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w156"
+ },
+ {
+  "word": "Hauthuum",
+  "hint": "T3 Seraphim battleship",
+  "tags": [
+   "seraphim",
+   "naval",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w157"
+ },
+ {
+  "word": "Iavish",
+  "hint": "T3 Seraphim aircraft carrier",
+  "tags": [
+   "seraphim",
+   "naval",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w158"
+ },
+ {
+  "word": "Yathsou",
+  "hint": "T3 Seraphim submarine hunter",
+  "tags": [
+   "seraphim",
+   "naval",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w159"
+ },
+ {
+  "word": "UEF Engineer",
+  "hint": "UEF engineer (any tech)",
+  "tags": [
+   "uef",
+   "land",
+   "engineer"
+  ],
+  "aliases": [
+   "UEF Eng"
+  ],
+  "enabled": true,
+  "id": "w160"
+ },
+ {
+  "word": "UEF ACU",
+  "hint": "UEF Armored Command Unit",
+  "tags": [
+   "uef",
+   "land",
+   "acu"
+  ],
+  "aliases": [
+   "UEF Armored Command Unit",
+   "UEF Commander"
+  ],
+  "enabled": true,
+  "id": "w161"
+ },
+ {
+  "word": "UEF SACU",
+  "hint": "UEF Support Armored Command Unit",
+  "tags": [
+   "uef",
+   "land",
+   "acu"
+  ],
+  "aliases": [
+   "UEF Support Commander",
+   "UEF Support Armored Command Unit"
+  ],
+  "enabled": true,
+  "id": "w162"
+ },
+ {
+  "word": "Cybran Engineer",
+  "hint": "Cybran engineer (any tech)",
+  "tags": [
+   "cybran",
+   "land",
+   "engineer"
+  ],
+  "aliases": [
+   "Cybran Eng"
+  ],
+  "enabled": true,
+  "id": "w163"
+ },
+ {
+  "word": "Cybran ACU",
+  "hint": "Cybran Armored Command Unit",
+  "tags": [
+   "cybran",
+   "land",
+   "acu"
+  ],
+  "aliases": [
+   "Cybran Armored Command Unit",
+   "Cybran Commander"
+  ],
+  "enabled": true,
+  "id": "w164"
+ },
+ {
+  "word": "Cybran SACU",
+  "hint": "Cybran Support Armored Command Unit",
+  "tags": [
+   "cybran",
+   "land",
+   "acu"
+  ],
+  "aliases": [
+   "Cybran Support Commander",
+   "Cybran Support Armored Command Unit"
+  ],
+  "enabled": true,
+  "id": "w165"
+ },
+ {
+  "word": "Aeon Engineer",
+  "hint": "Aeon engineer (any tech)",
+  "tags": [
+   "aeon",
+   "land",
+   "engineer"
+  ],
+  "aliases": [
+   "Aeon Eng"
+  ],
+  "enabled": true,
+  "id": "w166"
+ },
+ {
+  "word": "Aeon ACU",
+  "hint": "Aeon Armored Command Unit",
+  "tags": [
+   "aeon",
+   "land",
+   "acu"
+  ],
+  "aliases": [
+   "Aeon Armored Command Unit",
+   "Aeon Commander"
+  ],
+  "enabled": true,
+  "id": "w167"
+ },
+ {
+  "word": "Aeon SACU",
+  "hint": "Aeon Support Armored Command Unit",
+  "tags": [
+   "aeon",
+   "land",
+   "acu"
+  ],
+  "aliases": [
+   "Aeon Support Commander",
+   "Aeon Support Armored Command Unit"
+  ],
+  "enabled": true,
+  "id": "w168"
+ },
+ {
+  "word": "Seraphim Engineer",
+  "hint": "Seraphim engineer (any tech)",
+  "tags": [
+   "seraphim",
+   "land",
+   "engineer"
+  ],
+  "aliases": [
+   "Seraphim Eng"
+  ],
+  "enabled": true,
+  "id": "w169"
+ },
+ {
+  "word": "Seraphim ACU",
+  "hint": "Seraphim Armored Command Unit",
+  "tags": [
+   "seraphim",
+   "land",
+   "acu"
+  ],
+  "aliases": [
+   "Seraphim Armored Command Unit",
+   "Seraphim Commander"
+  ],
+  "enabled": true,
+  "id": "w170"
+ },
+ {
+  "word": "Seraphim SACU",
+  "hint": "Seraphim Support Armored Command Unit",
+  "tags": [
+   "seraphim",
+   "land",
+   "acu"
+  ],
+  "aliases": [
+   "Seraphim Support Commander",
+   "Seraphim Support Armored Command Unit"
+  ],
+  "enabled": true,
+  "id": "w171"
+ },
+ {
+  "word": "Sonar Platform",
+  "hint": "T3 mobile naval sonar (any faction)",
+  "tags": [
+   "neutral",
+   "naval",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w172"
+ },
+ {
+  "word": "Power Generator",
+  "hint": "power generator, any faction and tech",
+  "tags": [
+   "neutral",
+   "structure",
+   "economy"
+  ],
+  "aliases": [
+   "PGen",
+   "Power Gen"
+  ],
+  "enabled": true,
+  "id": "w173"
+ },
+ {
+  "word": "Hydrocarbon Power Plant",
+  "hint": "hydrocarbon power plant, any faction",
+  "tags": [
+   "neutral",
+   "structure",
+   "economy"
+  ],
+  "aliases": [
+   "Hydro",
+   "Hydrocarbon"
+  ],
+  "enabled": true,
+  "id": "w174"
+ },
+ {
+  "word": "Mass Extractor",
+  "hint": "mass extractor, any faction and tech",
+  "tags": [
+   "neutral",
+   "structure",
+   "economy"
+  ],
+  "aliases": [
+   "Mex"
+  ],
+  "enabled": true,
+  "id": "w175"
+ },
+ {
+  "word": "Mass Fabricator",
+  "hint": "mass fabricator, any faction and tech",
+  "tags": [
+   "neutral",
+   "structure",
+   "economy"
+  ],
+  "aliases": [
+   "Mass Fab",
+   "Fabricator"
+  ],
+  "enabled": true,
+  "id": "w176"
+ },
+ {
+  "word": "Energy Storage",
+  "hint": "energy storage, any faction",
+  "tags": [
+   "neutral",
+   "structure",
+   "economy"
+  ],
+  "aliases": [
+   "E Storage"
+  ],
+  "enabled": true,
+  "id": "w177"
+ },
+ {
+  "word": "Mass Storage",
+  "hint": "mass storage, any faction",
+  "tags": [
+   "neutral",
+   "structure",
+   "economy"
+  ],
+  "aliases": [
+   "M Storage"
+  ],
+  "enabled": true,
+  "id": "w178"
+ },
+ {
+  "word": "Radar",
+  "hint": "radar, any faction and tech",
+  "tags": [
+   "neutral",
+   "structure",
+   "intel"
+  ],
+  "aliases": [
+   "Radar System"
+  ],
+  "enabled": true,
+  "id": "w179"
+ },
+ {
+  "word": "Sonar",
+  "hint": "sonar, any faction and tech",
+  "tags": [
+   "neutral",
+   "structure",
+   "intel"
+  ],
+  "aliases": [
+   "Sonar System"
+  ],
+  "enabled": true,
+  "id": "w180"
+ },
+ {
+  "word": "Omni Sensor",
+  "hint": "T3 omni sensor, any faction",
+  "tags": [
+   "neutral",
+   "structure",
+   "intel"
+  ],
+  "aliases": [
+   "Omni",
+   "Omni Sensor Array"
+  ],
+  "enabled": true,
+  "id": "w181"
+ },
+ {
+  "word": "Quantum Gateway",
+  "hint": "T3 gateway, any faction",
+  "tags": [
+   "neutral",
+   "structure",
+   "t3"
+  ],
+  "aliases": [
+   "Gateway",
+   "QGate"
+  ],
+  "enabled": true,
+  "id": "w182"
+ },
+ {
+  "word": "Strategic Missile Launcher",
+  "hint": "nuke launcher, any faction",
+  "tags": [
+   "neutral",
+   "structure",
+   "t3"
+  ],
+  "aliases": [
+   "Nuke Launcher",
+   "Nuke",
+   "SML"
+  ],
+  "enabled": true,
+  "id": "w183"
+ },
+ {
+  "word": "Strategic Missile Defense",
+  "hint": "SMD, any faction",
+  "tags": [
+   "neutral",
+   "structure",
+   "t3"
+  ],
+  "aliases": [
+   "SMD",
+   "Nuke Defense"
+  ],
+  "enabled": true,
+  "id": "w184"
+ },
+ {
+  "word": "Heavy Artillery Installation",
+  "hint": "T3 artillery, any faction",
+  "tags": [
+   "neutral",
+   "structure",
+   "t3"
+  ],
+  "aliases": [
+   "T3 Artillery",
+   "T3 Arty",
+   "Heavy Artillery"
+  ],
+  "enabled": true,
+  "id": "w185"
+ },
+ {
+  "word": "Point Defense",
+  "hint": "T1 point defense, any faction",
+  "tags": [
+   "neutral",
+   "structure",
+   "t1"
+  ],
+  "aliases": [
+   "T1 PD",
+   "PD"
+  ],
+  "enabled": true,
+  "id": "w186"
+ },
+ {
+  "word": "Tactical Missile Launcher",
+  "hint": "TML, any faction",
+  "tags": [
+   "neutral",
+   "structure",
+   "t2"
+  ],
+  "aliases": [
+   "TML",
+   "Tac Missile Launcher"
+  ],
+  "enabled": true,
+  "id": "w187"
+ },
+ {
+  "word": "Tactical Missile Defense",
+  "hint": "TMD, any faction",
+  "tags": [
+   "neutral",
+   "structure",
+   "t2"
+  ],
+  "aliases": [
+   "TMD"
+  ],
+  "enabled": true,
+  "id": "w188"
+ },
+ {
+  "word": "Torpedo Launcher",
+  "hint": "torpedo launcher, any faction and tech",
+  "tags": [
+   "neutral",
+   "structure",
+   "naval"
+  ],
+  "aliases": [
+   "Torp Launcher"
+  ],
+  "enabled": true,
+  "id": "w189"
+ },
+ {
+  "word": "Air Staging Facility",
+  "hint": "air staging, any faction",
+  "tags": [
+   "neutral",
+   "structure",
+   "air"
+  ],
+  "aliases": [
+   "Air Staging",
+   "Air Pad"
+  ],
+  "enabled": true,
+  "id": "w190"
+ },
+ {
+  "word": "Wall Section",
+  "hint": "wall, any faction",
+  "tags": [
+   "neutral",
+   "structure",
+   "t1"
+  ],
+  "aliases": [
+   "Wall"
+  ],
+  "enabled": true,
+  "id": "w191"
+ },
+ {
+  "word": "UEF Land Factory",
+  "hint": "UEF land factory, any tech",
+  "tags": [
+   "uef",
+   "land",
+   "factory"
+  ],
+  "aliases": [
+   "UEF Land Fac"
+  ],
+  "enabled": true,
+  "id": "w192"
+ },
+ {
+  "word": "UEF Air Factory",
+  "hint": "UEF air factory, any tech",
+  "tags": [
+   "uef",
+   "air",
+   "factory"
+  ],
+  "aliases": [
+   "UEF Air Fac"
+  ],
+  "enabled": true,
+  "id": "w193"
+ },
+ {
+  "word": "UEF Naval Factory",
+  "hint": "UEF naval factory, any tech",
+  "tags": [
+   "uef",
+   "naval",
+   "factory"
+  ],
+  "aliases": [
+   "UEF Naval Fac"
+  ],
+  "enabled": true,
+  "id": "w194"
+ },
+ {
+  "word": "UEF T1 Anti-Air",
+  "hint": "UEF T1 anti-air turret",
+  "tags": [
+   "uef",
+   "structure",
+   "t1",
+   "aa"
+  ],
+  "aliases": [
+   "UEF T1 AA"
+  ],
+  "enabled": true,
+  "id": "w195"
+ },
+ {
+  "word": "UEF T2 Anti-Air",
+  "hint": "UEF T2 anti-air flak",
+  "tags": [
+   "uef",
+   "structure",
+   "t2",
+   "aa"
+  ],
+  "aliases": [
+   "UEF T2 AA",
+   "UEF Flak"
+  ],
+  "enabled": true,
+  "id": "w196"
+ },
+ {
+  "word": "UEF T3 Anti-Air",
+  "hint": "UEF T3 anti-air SAM launcher",
+  "tags": [
+   "uef",
+   "structure",
+   "t3",
+   "aa"
+  ],
+  "aliases": [
+   "UEF T3 AA",
+   "UEF SAM"
+  ],
+  "enabled": true,
+  "id": "w197"
+ },
+ {
+  "word": "UEF T2 Point Defense",
+  "hint": "UEF T2 point defense",
+  "tags": [
+   "uef",
+   "structure",
+   "t2"
+  ],
+  "aliases": [
+   "UEF T2 PD"
+  ],
+  "enabled": true,
+  "id": "w198"
+ },
+ {
+  "word": "UEF T2 Artillery",
+  "hint": "UEF T2 artillery installation",
+  "tags": [
+   "uef",
+   "structure",
+   "t2"
+  ],
+  "aliases": [
+   "UEF T2 Arty"
+  ],
+  "enabled": true,
+  "id": "w199"
+ },
+ {
+  "word": "UEF Shield Generator",
+  "hint": "UEF shield generator, any tech",
+  "tags": [
+   "uef",
+   "structure",
+   "shield"
+  ],
+  "aliases": [
+   "UEF Shield"
+  ],
+  "enabled": true,
+  "id": "w200"
+ },
+ {
+  "word": "UEF Stealth Field Generator",
+  "hint": "UEF stealth field generator",
+  "tags": [
+   "uef",
+   "structure",
+   "stealth"
+  ],
+  "aliases": [
+   "UEF Stealth"
+  ],
+  "enabled": true,
+  "id": "w201"
+ },
+ {
+  "word": "Cybran Land Factory",
+  "hint": "Cybran land factory, any tech",
+  "tags": [
+   "cybran",
+   "land",
+   "factory"
+  ],
+  "aliases": [
+   "Cybran Land Fac"
+  ],
+  "enabled": true,
+  "id": "w202"
+ },
+ {
+  "word": "Cybran Air Factory",
+  "hint": "Cybran air factory, any tech",
+  "tags": [
+   "cybran",
+   "air",
+   "factory"
+  ],
+  "aliases": [
+   "Cybran Air Fac"
+  ],
+  "enabled": true,
+  "id": "w203"
+ },
+ {
+  "word": "Cybran Naval Factory",
+  "hint": "Cybran naval factory, any tech",
+  "tags": [
+   "cybran",
+   "naval",
+   "factory"
+  ],
+  "aliases": [
+   "Cybran Naval Fac"
+  ],
+  "enabled": true,
+  "id": "w204"
+ },
+ {
+  "word": "Cybran T1 Anti-Air",
+  "hint": "Cybran T1 anti-air turret",
+  "tags": [
+   "cybran",
+   "structure",
+   "t1",
+   "aa"
+  ],
+  "aliases": [
+   "Cybran T1 AA"
+  ],
+  "enabled": true,
+  "id": "w205"
+ },
+ {
+  "word": "Cybran T2 Anti-Air",
+  "hint": "Cybran T2 anti-air flak",
+  "tags": [
+   "cybran",
+   "structure",
+   "t2",
+   "aa"
+  ],
+  "aliases": [
+   "Cybran T2 AA",
+   "Cybran Flak"
+  ],
+  "enabled": true,
+  "id": "w206"
+ },
+ {
+  "word": "Cybran T3 Anti-Air",
+  "hint": "Cybran T3 anti-air SAM launcher",
+  "tags": [
+   "cybran",
+   "structure",
+   "t3",
+   "aa"
+  ],
+  "aliases": [
+   "Cybran T3 AA",
+   "Cybran SAM"
+  ],
+  "enabled": true,
+  "id": "w207"
+ },
+ {
+  "word": "Cybran T2 Point Defense",
+  "hint": "Cybran T2 point defense",
+  "tags": [
+   "cybran",
+   "structure",
+   "t2"
+  ],
+  "aliases": [
+   "Cybran T2 PD"
+  ],
+  "enabled": true,
+  "id": "w208"
+ },
+ {
+  "word": "Cybran T2 Artillery",
+  "hint": "Cybran T2 artillery installation",
+  "tags": [
+   "cybran",
+   "structure",
+   "t2"
+  ],
+  "aliases": [
+   "Cybran T2 Arty"
+  ],
+  "enabled": true,
+  "id": "w209"
+ },
+ {
+  "word": "Cybran Shield Generator",
+  "hint": "Cybran shield generator, any tech",
+  "tags": [
+   "cybran",
+   "structure",
+   "shield"
+  ],
+  "aliases": [
+   "Cybran Shield"
+  ],
+  "enabled": true,
+  "id": "w210"
+ },
+ {
+  "word": "Cybran Stealth Field Generator",
+  "hint": "Cybran stealth field generator",
+  "tags": [
+   "cybran",
+   "structure",
+   "stealth"
+  ],
+  "aliases": [
+   "Cybran Stealth"
+  ],
+  "enabled": true,
+  "id": "w211"
+ },
+ {
+  "word": "Aeon Land Factory",
+  "hint": "Aeon land factory, any tech",
+  "tags": [
+   "aeon",
+   "land",
+   "factory"
+  ],
+  "aliases": [
+   "Aeon Land Fac"
+  ],
+  "enabled": true,
+  "id": "w212"
+ },
+ {
+  "word": "Aeon Air Factory",
+  "hint": "Aeon air factory, any tech",
+  "tags": [
+   "aeon",
+   "air",
+   "factory"
+  ],
+  "aliases": [
+   "Aeon Air Fac"
+  ],
+  "enabled": true,
+  "id": "w213"
+ },
+ {
+  "word": "Aeon Naval Factory",
+  "hint": "Aeon naval factory, any tech",
+  "tags": [
+   "aeon",
+   "naval",
+   "factory"
+  ],
+  "aliases": [
+   "Aeon Naval Fac"
+  ],
+  "enabled": true,
+  "id": "w214"
+ },
+ {
+  "word": "Aeon T1 Anti-Air",
+  "hint": "Aeon T1 anti-air turret",
+  "tags": [
+   "aeon",
+   "structure",
+   "t1",
+   "aa"
+  ],
+  "aliases": [
+   "Aeon T1 AA"
+  ],
+  "enabled": true,
+  "id": "w215"
+ },
+ {
+  "word": "Aeon T2 Anti-Air",
+  "hint": "Aeon T2 anti-air flak",
+  "tags": [
+   "aeon",
+   "structure",
+   "t2",
+   "aa"
+  ],
+  "aliases": [
+   "Aeon T2 AA",
+   "Aeon Flak"
+  ],
+  "enabled": true,
+  "id": "w216"
+ },
+ {
+  "word": "Aeon T3 Anti-Air",
+  "hint": "Aeon T3 anti-air SAM launcher",
+  "tags": [
+   "aeon",
+   "structure",
+   "t3",
+   "aa"
+  ],
+  "aliases": [
+   "Aeon T3 AA",
+   "Aeon SAM"
+  ],
+  "enabled": true,
+  "id": "w217"
+ },
+ {
+  "word": "Aeon T2 Point Defense",
+  "hint": "Aeon T2 point defense",
+  "tags": [
+   "aeon",
+   "structure",
+   "t2"
+  ],
+  "aliases": [
+   "Aeon T2 PD"
+  ],
+  "enabled": true,
+  "id": "w218"
+ },
+ {
+  "word": "Aeon T2 Artillery",
+  "hint": "Aeon T2 artillery installation",
+  "tags": [
+   "aeon",
+   "structure",
+   "t2"
+  ],
+  "aliases": [
+   "Aeon T2 Arty"
+  ],
+  "enabled": true,
+  "id": "w219"
+ },
+ {
+  "word": "Aeon Shield Generator",
+  "hint": "Aeon shield generator, any tech",
+  "tags": [
+   "aeon",
+   "structure",
+   "shield"
+  ],
+  "aliases": [
+   "Aeon Shield"
+  ],
+  "enabled": true,
+  "id": "w220"
+ },
+ {
+  "word": "Aeon Stealth Field Generator",
+  "hint": "Aeon stealth field generator",
+  "tags": [
+   "aeon",
+   "structure",
+   "stealth"
+  ],
+  "aliases": [
+   "Aeon Stealth"
+  ],
+  "enabled": true,
+  "id": "w221"
+ },
+ {
+  "word": "Seraphim Land Factory",
+  "hint": "Seraphim land factory, any tech",
+  "tags": [
+   "seraphim",
+   "land",
+   "factory"
+  ],
+  "aliases": [
+   "Seraphim Land Fac"
+  ],
+  "enabled": true,
+  "id": "w222"
+ },
+ {
+  "word": "Seraphim Air Factory",
+  "hint": "Seraphim air factory, any tech",
+  "tags": [
+   "seraphim",
+   "air",
+   "factory"
+  ],
+  "aliases": [
+   "Seraphim Air Fac"
+  ],
+  "enabled": true,
+  "id": "w223"
+ },
+ {
+  "word": "Seraphim Naval Factory",
+  "hint": "Seraphim naval factory, any tech",
+  "tags": [
+   "seraphim",
+   "naval",
+   "factory"
+  ],
+  "aliases": [
+   "Seraphim Naval Fac"
+  ],
+  "enabled": true,
+  "id": "w224"
+ },
+ {
+  "word": "Seraphim T1 Anti-Air",
+  "hint": "Seraphim T1 anti-air turret",
+  "tags": [
+   "seraphim",
+   "structure",
+   "t1",
+   "aa"
+  ],
+  "aliases": [
+   "Seraphim T1 AA"
+  ],
+  "enabled": true,
+  "id": "w225"
+ },
+ {
+  "word": "Seraphim T2 Anti-Air",
+  "hint": "Seraphim T2 anti-air flak",
+  "tags": [
+   "seraphim",
+   "structure",
+   "t2",
+   "aa"
+  ],
+  "aliases": [
+   "Seraphim T2 AA",
+   "Seraphim Flak"
+  ],
+  "enabled": true,
+  "id": "w226"
+ },
+ {
+  "word": "Seraphim T3 Anti-Air",
+  "hint": "Seraphim T3 anti-air SAM launcher",
+  "tags": [
+   "seraphim",
+   "structure",
+   "t3",
+   "aa"
+  ],
+  "aliases": [
+   "Seraphim T3 AA",
+   "Seraphim SAM"
+  ],
+  "enabled": true,
+  "id": "w227"
+ },
+ {
+  "word": "Seraphim T2 Point Defense",
+  "hint": "Seraphim T2 point defense",
+  "tags": [
+   "seraphim",
+   "structure",
+   "t2"
+  ],
+  "aliases": [
+   "Seraphim T2 PD"
+  ],
+  "enabled": true,
+  "id": "w228"
+ },
+ {
+  "word": "Seraphim T2 Artillery",
+  "hint": "Seraphim T2 artillery installation",
+  "tags": [
+   "seraphim",
+   "structure",
+   "t2"
+  ],
+  "aliases": [
+   "Seraphim T2 Arty"
+  ],
+  "enabled": true,
+  "id": "w229"
+ },
+ {
+  "word": "Seraphim Shield Generator",
+  "hint": "Seraphim shield generator, any tech",
+  "tags": [
+   "seraphim",
+   "structure",
+   "shield"
+  ],
+  "aliases": [
+   "Seraphim Shield"
+  ],
+  "enabled": true,
+  "id": "w230"
+ },
+ {
+  "word": "Seraphim Stealth Field Generator",
+  "hint": "Seraphim stealth field generator",
+  "tags": [
+   "seraphim",
+   "structure",
+   "stealth"
+  ],
+  "aliases": [
+   "Seraphim Stealth"
+  ],
+  "enabled": true,
+  "id": "w231"
+ },
+ {
+  "word": "Paragon",
+  "hint": "Aeon experimental resource generator",
+  "tags": [
+   "aeon",
+   "structure",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w232"
+ },
+ {
+  "word": "Salvation",
+  "hint": "Aeon experimental rapid-fire artillery",
+  "tags": [
+   "aeon",
+   "structure",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w233"
+ },
+ {
+  "word": "Mavor",
+  "hint": "UEF experimental artillery",
+  "tags": [
+   "uef",
+   "structure",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w234"
+ },
+ {
+  "word": "Yolona Oss",
+  "hint": "Seraphim experimental missile launcher",
+  "tags": [
+   "seraphim",
+   "structure",
+   "experimental"
+  ],
+  "aliases": [
+   "Yolona"
+  ],
+  "enabled": true,
+  "id": "w235"
+ },
+ {
+  "word": "Novax Center",
+  "hint": "UEF experimental satellite system",
+  "tags": [
+   "uef",
+   "structure",
+   "experimental"
+  ],
+  "aliases": [
+   "Novax"
+  ],
+  "enabled": true,
+  "id": "w236"
+ },
+ {
+  "word": "Eye of Rhianne",
+  "hint": "Aeon quantum optics facility",
+  "tags": [
+   "aeon",
+   "structure",
+   "t3"
+  ],
+  "aliases": [
+   "Rhianne"
+  ],
+  "enabled": true,
+  "id": "w237"
+ },
+ {
+  "word": "Soothsayer",
+  "hint": "Cybran perimeter monitoring system",
+  "tags": [
+   "cybran",
+   "structure",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w238"
+ },
+ {
+  "word": "HARMS",
+  "hint": "Cybran T3 torpedo ambushing system",
+  "tags": [
+   "cybran",
+   "structure",
+   "t3"
+  ],
+  "aliases": [
+   "Harms"
+  ],
+  "enabled": true,
+  "id": "w239"
+ },
+ {
+  "word": "Ravager",
+  "hint": "UEF T3 heavy point defense",
+  "tags": [
+   "uef",
+   "structure",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": true,
+  "id": "w240"
+ },
+ {
+  "word": "The Kennel",
+  "hint": "UEF engineering station",
+  "tags": [
+   "uef",
+   "structure",
+   "t2"
+  ],
+  "aliases": [
+   "Kennel"
+  ],
+  "enabled": true,
+  "id": "w241"
+ },
+ {
+  "word": "The Hive",
+  "hint": "Cybran engineering station",
+  "tags": [
+   "cybran",
+   "structure",
+   "t2"
+  ],
+  "aliases": [
+   "Hive"
+  ],
+  "enabled": true,
+  "id": "w242"
+ },
+ {
+  "word": "Peeper",
+  "hint": "T1 Nomads air scout",
+  "tags": [
+   "nomads",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w243"
+ },
+ {
+  "word": "Falcon",
+  "hint": "T1 Nomads interceptor",
+  "tags": [
+   "nomads",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w244"
+ },
+ {
+  "word": "Phoenix",
+  "hint": "T1 Nomads attack bomber",
+  "tags": [
+   "nomads",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w245"
+ },
+ {
+  "word": "Scalestoria",
+  "hint": "T2 Nomads air transport",
+  "tags": [
+   "nomads",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w246"
+ },
+ {
+  "word": "Golem",
+  "hint": "T1 Nomads light gunship",
+  "tags": [
+   "nomads",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w247"
+ },
+ {
+  "word": "Diligence",
+  "hint": "T1 Nomads transport drone",
+  "tags": [
+   "nomads",
+   "air",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w248"
+ },
+ {
+  "word": "Spitfire",
+  "hint": "T2 Nomads fighter/bomber",
+  "tags": [
+   "nomads",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w249"
+ },
+ {
+  "word": "Vangard",
+  "hint": "T2 Nomads torpedo gunship",
+  "tags": [
+   "nomads",
+   "air",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w250"
+ },
+ {
+  "word": "Beholder",
+  "hint": "T3 Nomads spy plane",
+  "tags": [
+   "nomads",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w251"
+ },
+ {
+  "word": "Thunder",
+  "hint": "T3 Nomads air superiority fighter",
+  "tags": [
+   "nomads",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w252"
+ },
+ {
+  "word": "Red Rage",
+  "hint": "T3 Nomads strategic bomber",
+  "tags": [
+   "nomads",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w253"
+ },
+ {
+  "word": "Hornet",
+  "hint": "T3 Nomads heavy gunship",
+  "tags": [
+   "nomads",
+   "air",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w254"
+ },
+ {
+  "word": "Atlas",
+  "hint": "Experimental Nomads air transport",
+  "tags": [
+   "nomads",
+   "air",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w255"
+ },
+ {
+  "word": "Silhouette",
+  "hint": "T1 Nomads land scout",
+  "tags": [
+   "nomads",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w256"
+ },
+ {
+  "word": "Barrager",
+  "hint": "T1 Nomads mobile anti-air gun",
+  "tags": [
+   "nomads",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w257"
+ },
+ {
+  "word": "Grasshopper",
+  "hint": "T1 Nomads light assault vehicle",
+  "tags": [
+   "nomads",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w258"
+ },
+ {
+  "word": "Marksman",
+  "hint": "T1 Nomads tank destroyer",
+  "tags": [
+   "nomads",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w259"
+ },
+ {
+  "word": "Avalanche",
+  "hint": "T2 Nomads mobile missile launcher",
+  "tags": [
+   "nomads",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w260"
+ },
+ {
+  "word": "Eclipse",
+  "hint": "T1 Nomads medium tank",
+  "tags": [
+   "nomads",
+   "land",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w261"
+ },
+ {
+  "word": "Brute",
+  "hint": "T2 Nomads heavy tank",
+  "tags": [
+   "nomads",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w262"
+ },
+ {
+  "word": "Rogue",
+  "hint": "T2 Nomads fast assault hovertank",
+  "tags": [
+   "nomads",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w263"
+ },
+ {
+  "word": "Skyshell",
+  "hint": "T2 Nomads mobile aa flak artillery",
+  "tags": [
+   "nomads",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w264"
+ },
+ {
+  "word": "Scarab",
+  "hint": "T2 Nomads field engineer",
+  "tags": [
+   "nomads",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w265"
+ },
+ {
+  "word": "Watchman",
+  "hint": "T3 Nomads mobile anti-air missile launcher",
+  "tags": [
+   "nomads",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w266"
+ },
+ {
+  "word": "Nova",
+  "hint": "T3 Nomads heavy hover tank",
+  "tags": [
+   "nomads",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w267"
+ },
+ {
+  "word": "Mauler",
+  "hint": "T3 Nomads mobile heavy artillery",
+  "tags": [
+   "nomads",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w268"
+ },
+ {
+  "word": "Slugger",
+  "hint": "T3 Nomads armored assault tank",
+  "tags": [
+   "nomads",
+   "land",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w269"
+ },
+ {
+  "word": "Dominator",
+  "hint": "T2 Nomads emp tank",
+  "tags": [
+   "nomads",
+   "land",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w270"
+ },
+ {
+  "word": "Bullfrog",
+  "hint": "Experimental Nomads heavy tank",
+  "tags": [
+   "nomads",
+   "land",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w271"
+ },
+ {
+  "word": "Beamer",
+  "hint": "Experimental Nomads assault tank",
+  "tags": [
+   "nomads",
+   "land",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w272"
+ },
+ {
+  "word": "Jericho",
+  "hint": "Experimental Nomads missile tank",
+  "tags": [
+   "nomads",
+   "land",
+   "experimental"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w273"
+ },
+ {
+  "word": "Defender",
+  "hint": "T1 Nomads artillery boat",
+  "tags": [
+   "nomads",
+   "naval",
+   "t1"
+  ],
+  "aliases": [
+   "Defender Class"
+  ],
+  "enabled": false,
+  "id": "w274"
+ },
+ {
+  "word": "Lance",
+  "hint": "T1 Nomads frigate",
+  "tags": [
+   "nomads",
+   "naval",
+   "t1"
+  ],
+  "aliases": [
+   "Lance Class"
+  ],
+  "enabled": false,
+  "id": "w275"
+ },
+ {
+  "word": "Nightstorm",
+  "hint": "T2 Nomads destroyer",
+  "tags": [
+   "nomads",
+   "naval",
+   "t2"
+  ],
+  "aliases": [
+   "Nightstorm Class"
+  ],
+  "enabled": false,
+  "id": "w276"
+ },
+ {
+  "word": "Mercenary",
+  "hint": "T2 Nomads cruiser",
+  "tags": [
+   "nomads",
+   "naval",
+   "t2"
+  ],
+  "aliases": [
+   "Mercenary Class"
+  ],
+  "enabled": false,
+  "id": "w277"
+ },
+ {
+  "word": "Buccaneer",
+  "hint": "T1 Nomads attack submarine",
+  "tags": [
+   "nomads",
+   "naval",
+   "t1"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w278"
+ },
+ {
+  "word": "Whaler",
+  "hint": "T2 Nomads anti-submersible boat",
+  "tags": [
+   "nomads",
+   "naval",
+   "t2"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w279"
+ },
+ {
+  "word": "Juggernaut",
+  "hint": "T3 Nomads battleship",
+  "tags": [
+   "nomads",
+   "naval",
+   "t3"
+  ],
+  "aliases": [
+   "Juggernaut Class"
+  ],
+  "enabled": false,
+  "id": "w280"
+ },
+ {
+  "word": "Mastodon",
+  "hint": "T3 Nomads aircraft carrier",
+  "tags": [
+   "nomads",
+   "naval",
+   "t3"
+  ],
+  "aliases": [
+   "Mastodon Class"
+  ],
+  "enabled": false,
+  "id": "w281"
+ },
+ {
+  "word": "Leviathan",
+  "hint": "T3 Nomads tactical submarine",
+  "tags": [
+   "nomads",
+   "naval",
+   "t3"
+  ],
+  "aliases": [],
+  "enabled": false,
+  "id": "w282"
+ }
+]

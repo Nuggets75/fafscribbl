@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>fafscribbl - draw and guess FAF units</title>
+<meta name="description" content="Draw and guess Supreme Commander: Forged Alliance Forever units. No login, just a name.">
+<link rel="icon" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- ------------------------------------------------ home ---------------- -->
+<div id="home">
+  <div class="home-card">
+    <div class="card">
+      <h1 class="logo">faf<span>scribbl</span></h1>
+      <p class="tagline">One player draws a Forged Alliance unit, everyone else guesses it in the chat. No FAF login, just pick a name.</p>
+
+      <div class="field">
+        <label for="nameInput">Your name</label>
+        <input id="nameInput" maxlength="18" placeholder="Commander" autocomplete="off">
+      </div>
+
+      <div class="field joinrow">
+        <input id="codeInput" maxlength="8" placeholder="Lobby code" autocomplete="off" style="text-transform:uppercase">
+        <button id="joinBtn">Join</button>
+      </div>
+
+      <button id="createBtn" class="primary" style="width:100%">Create a lobby</button>
+      <div class="err" id="homeErr"></div>
+
+      <p class="hint" style="margin-top:14px">
+        Stuck on a name? The full unit database is here:
+        <a id="dbLink" href="https://faforever.github.io/etfreeman-db/#/" target="_blank" rel="noopener">unit database</a>.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:16px">Open lobbies</h3>
+      <p class="hint" style="margin:0">Public lobbies anyone can join.</p>
+      <div id="publicRooms"><p class="hint">Nothing open right now. Create one.</p></div>
+      <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+      <p class="hint" style="margin:0"><span id="wordCount">0</span> unit names in the pool.</p>
+      <p class="hint"><a href="/admin">Admin</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ------------------------------------------------ game ---------------- -->
+<div id="game" class="hide">
+  <header>
+    <div class="brand">faf<span>scribbl</span></div>
+    <div class="timer" id="timer">-</div>
+    <div class="roundbox" id="roundBox">Lobby</div>
+    <div class="wordbox">
+      <div class="sub" id="wordSub">waiting</div>
+      <div class="mask" id="wordMask"></div>
+    </div>
+    <div class="hdr-right">
+      <div class="codepill" id="codePill" title="Copy the invite link">Lobby <b id="codeText">-----</b></div>
+      <a class="codepill" id="dbLink2" href="https://faforever.github.io/etfreeman-db/#/" target="_blank" rel="noopener">Unit DB</a>
+      <button class="small ghost" id="skipBtn">Skip turn</button>
+      <button class="small ghost" id="leaveBtn">Leave</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="panel"><div id="players"></div></div>
+
+    <div class="panel" id="stage">
+      <div id="canvasWrap">
+        <canvas id="board"></canvas>
+
+        <!-- word choice -->
+        <div class="ov hide" id="ovChoose">
+          <div class="ovbox">
+            <h2 id="chooseTitle">Choose a unit to draw</h2>
+            <p class="muted" id="chooseSub"></p>
+            <div class="choices" id="chooseList"></div>
+          </div>
+        </div>
+
+        <!-- turn end -->
+        <div class="ov hide" id="ovTurnEnd">
+          <div class="ovbox">
+            <h2>Turn over</h2>
+            <div class="revealword" id="revealWord"></div>
+            <div class="results" id="turnResults"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="tools" class="hide">
+        <div class="swatches" id="swatches"></div>
+        <div class="sizes" id="sizes"></div>
+        <div class="tool" id="toolPen" title="Pen">&#9998;</div>
+        <div class="tool" id="toolFill" title="Fill">&#9632;</div>
+        <div class="tool" id="toolEraser" title="Eraser">&#9633;</div>
+        <div class="tool" id="toolUndo" title="Undo">&#8630;</div>
+        <div class="tool" id="toolClear" title="Clear everything">&#10005;</div>
+      </div>
+    </div>
+
+    <div class="panel" id="chatpanel">
+      <div id="chatlog"></div>
+      <form id="chatform" autocomplete="off">
+        <input id="chatinput" maxlength="120" placeholder="Type your guess" autocomplete="off">
+        <button class="primary small" type="submit">Send</button>
+      </form>
+    </div>
+  </main>
+
+    <!-- game end -->
+    <div class="ov full hide" id="ovGameEnd">
+      <div class="ovbox">
+        <h2>Game over</h2>
+        <div class="podium" id="podium"></div>
+        <div class="results" id="finalResults"></div>
+        <div style="margin-top:16px"><button class="primary" id="againBtn">Back to the lobby</button></div>
+      </div>
+    </div>
+
+    <!-- lobby -->
+    <div class="ov full hide" id="ovLobby">
+      <div class="ovbox">
+        <h2>Lobby <span class="mono" id="lobbyCode"></span></h2>
+        <p class="muted">Share the link, wait for players, then start.</p>
+        <div class="inviteRow">
+          <input id="inviteLink" readonly>
+          <button id="copyInvite">Copy</button>
+        </div>
+        <div class="lobbyPlayers" id="lobbyPlayers"></div>
+
+        <div class="settings" id="settingsForm">
+          <div>
+            <label for="setRounds">Rounds</label>
+            <select id="setRounds"></select>
+          </div>
+          <div>
+            <label for="setTime">Draw time</label>
+            <select id="setTime"></select>
+          </div>
+          <div>
+            <label for="setMax">Max players</label>
+            <select id="setMax"></select>
+          </div>
+          <div>
+            <label for="setChoices">Word choices</label>
+            <select id="setChoices">
+              <option value="1">1 (assigned, no picking)</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </div>
+          <div>
+            <label for="setHints">Letter hints</label>
+            <select id="setHints">
+              <option value="0">Off</option>
+              <option value="1">1 letter</option>
+              <option value="2">2 letters</option>
+              <option value="3">3 letters</option>
+              <option value="4">4 letters</option>
+              <option value="5">5 letters</option>
+            </select>
+          </div>
+          <div>
+            <label for="setPublic">Visibility</label>
+            <select id="setPublic">
+              <option value="0">Private (link only)</option>
+              <option value="1">Public (listed on the front page)</option>
+            </select>
+          </div>
+          <div class="full">
+            <label>Factions in the word pool <span class="hint">(none selected = all)</span></label>
+            <div class="chips" id="factionChips"></div>
+          </div>
+          <div class="full">
+            <label>Unit types <span class="hint">(none selected = all)</span></label>
+            <div class="chips" id="kindChips"></div>
+          </div>
+          <div class="full">
+            <label for="setCustom">Extra words for this lobby <span class="hint">(one per line or comma separated)</span></label>
+            <textarea id="setCustom" rows="2" placeholder="Optional"></textarea>
+            <label style="margin-top:6px"><input type="checkbox" id="setCustomOnly" style="width:auto"> Use only these words</label>
+          </div>
+        </div>
+
+        <p class="hint" id="hostNote">Only the host can change the settings.</p>
+        <button class="primary" id="startBtn" style="width:100%;margin-top:6px">Start the game</button>
+      </div>
+    </div>
+
+</div>
+
+<div class="toastwrap" id="toasts"></div>
+<script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,430 @@
+'use strict';
+// fafscribbl - draw and guess Supreme Commander units.
+// Zero runtime dependencies: node built-ins only.
+
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+
+const ws = require('./lib/ws');
+const { Store } = require('./lib/store');
+const { RoomManager, sanitizeSettings, CANVAS_W, CANVAS_H, FACTION_TAGS, KIND_TAGS } = require('./lib/game');
+
+const PORT = Number(process.env.PORT || 8092);
+const HOST = process.env.HOST || '0.0.0.0';
+const DATA_DIR = process.env.DATA_DIR || '/data';
+const PUBLIC_DIR = path.join(__dirname, 'public');
+const SEED = path.join(__dirname, 'data', 'words.seed.json');
+const UNIT_DB_URL = process.env.UNIT_DB_URL || 'https://faforever.github.io/etfreeman-db/#/';
+const SITE_NAME = process.env.SITE_NAME || 'fafscribbl';
+
+let ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+if (!ADMIN_PASSWORD) {
+  ADMIN_PASSWORD = crypto.randomBytes(9).toString('base64url');
+  console.warn('[fafscribbl] ADMIN_PASSWORD is not set. Generated one for this run: ' + ADMIN_PASSWORD);
+  console.warn('[fafscribbl] Set ADMIN_PASSWORD in the container to keep it across restarts.');
+}
+
+const store = new Store(DATA_DIR, SEED);
+store.load();
+const mgr = new RoomManager(store);
+console.log('[fafscribbl] data dir ' + DATA_DIR + ', ' + store.db.words.length + ' words (' + store.enabledWords().length + ' enabled)');
+
+// ---------------------------------------------------------------- admin auth
+const adminTokens = new Map(); // token -> expiry
+const loginHits = new Map();   // ip -> {n, until}
+const ADMIN_TTL = 12 * 60 * 60 * 1000;
+
+function sha(s) { return crypto.createHash('sha256').update(String(s)).digest(); }
+function samePassword(given) {
+  const a = sha(given || '');
+  const b = sha(ADMIN_PASSWORD);
+  return crypto.timingSafeEqual(a, b);
+}
+function issueAdminToken() {
+  const t = crypto.randomBytes(24).toString('hex');
+  adminTokens.set(t, Date.now() + ADMIN_TTL);
+  return t;
+}
+function isAdmin(req) {
+  const t = req.headers['x-admin-token'];
+  if (!t) return false;
+  const exp = adminTokens.get(String(t));
+  if (!exp) return false;
+  if (exp < Date.now()) { adminTokens.delete(String(t)); return false; }
+  return true;
+}
+function ipOf(req) {
+  const xf = req.headers['x-forwarded-for'];
+  if (xf) return String(xf).split(',')[0].trim();
+  return (req.socket && req.socket.remoteAddress) || 'unknown';
+}
+setInterval(() => {
+  const now = Date.now();
+  for (const [t, exp] of adminTokens) if (exp < now) adminTokens.delete(t);
+  for (const [ip, v] of loginHits) if (v.until < now) loginHits.delete(ip);
+}, 60000).unref();
+
+// ---------------------------------------------------------------- http utils
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.ico': 'image/x-icon',
+  '.webmanifest': 'application/manifest+json'
+};
+
+function sendJSON(res, code, obj) {
+  const body = JSON.stringify(obj);
+  res.writeHead(code, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Content-Length': Buffer.byteLength(body),
+    'Cache-Control': 'no-store'
+  });
+  res.end(body);
+}
+function sendText(res, code, text) {
+  res.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end(text);
+}
+function readBody(req, limit, cb) {
+  let size = 0;
+  const chunks = [];
+  let done = false;
+  req.on('data', (c) => {
+    if (done) return;
+    size += c.length;
+    if (size > limit) { done = true; cb(new Error('too large')); try { req.destroy(); } catch (e) {} return; }
+    chunks.push(c);
+  });
+  req.on('end', () => { if (!done) { done = true; cb(null, Buffer.concat(chunks).toString('utf8')); } });
+  req.on('error', (e) => { if (!done) { done = true; cb(e); } });
+}
+function readJSON(req, res, fn) {
+  readBody(req, 8 * 1024 * 1024, (err, body) => {
+    if (err) return sendJSON(res, 413, { error: 'body too large' });
+    let obj = null;
+    try { obj = body ? JSON.parse(body) : {}; }
+    catch (e) { return sendJSON(res, 400, { error: 'bad json' }); }
+    fn(obj);
+  });
+}
+function serveFile(res, file, cacheable) {
+  fs.readFile(file, (err, buf) => {
+    if (err) return sendText(res, 404, 'Not found');
+    const ext = path.extname(file).toLowerCase();
+    res.writeHead(200, {
+      'Content-Type': MIME[ext] || 'application/octet-stream',
+      'Content-Length': buf.length,
+      'Cache-Control': cacheable ? 'public, max-age=60' : 'no-cache',
+      'X-Content-Type-Options': 'nosniff'
+    });
+    res.end(buf);
+  });
+}
+
+// ---------------------------------------------------------------- word admin
+function findWord(id) { return store.db.words.find((w) => w.id === String(id)); }
+
+function parseImport(text) {
+  const trimmed = String(text || '').trim();
+  if (!trimmed) return [];
+  if (trimmed[0] === '[') {
+    let arr;
+    try { arr = JSON.parse(trimmed); } catch (e) { throw new Error('That is not valid JSON'); }
+    if (!Array.isArray(arr)) throw new Error('JSON must be an array');
+    return arr.map((w) => ({
+      word: String(w.word || '').trim(),
+      hint: String(w.hint || '').trim(),
+      aliases: Array.isArray(w.aliases) ? w.aliases.map(String) : [],
+      tags: Array.isArray(w.tags) ? w.tags.map(String) : [],
+      enabled: w.enabled !== false
+    })).filter((w) => w.word);
+  }
+  // plain lines:  Word | hint | alias, alias | tag tag
+  return trimmed.split(/\r?\n/).map((line) => {
+    const parts = line.split('|').map((s) => s.trim());
+    if (!parts[0]) return null;
+    return {
+      word: parts[0],
+      hint: parts[1] || '',
+      aliases: parts[2] ? parts[2].split(',').map((s) => s.trim()).filter(Boolean) : [],
+      tags: parts[3] ? parts[3].split(/[\s,]+/).map((s) => s.trim().toLowerCase()).filter(Boolean) : [],
+      enabled: true
+    };
+  }).filter(Boolean);
+}
+
+// ---------------------------------------------------------------- routes
+const server = http.createServer((req, res) => {
+  let url;
+  try { url = new URL(req.url, 'http://' + (req.headers.host || 'localhost')); }
+  catch (e) { return sendText(res, 400, 'Bad request'); }
+  const p = url.pathname;
+  const method = req.method || 'GET';
+
+  // ---- public API
+  if (p === '/api/config' && method === 'GET') {
+    return sendJSON(res, 200, {
+      site: SITE_NAME,
+      canvas: { w: CANVAS_W, h: CANVAS_H },
+      unitDb: UNIT_DB_URL,
+      defaults: store.defaults(),
+      factionTags: FACTION_TAGS,
+      kindTags: KIND_TAGS,
+      words: store.enabledWords().length
+    });
+  }
+  if (p === '/api/rooms' && method === 'GET') {
+    return sendJSON(res, 200, { rooms: mgr.publicRooms() });
+  }
+  if (p === '/api/health' && method === 'GET') {
+    return sendJSON(res, 200, { ok: true, rooms: mgr.rooms.size, words: store.db.words.length, uptime: Math.round(process.uptime()) });
+  }
+
+  // ---- admin API
+  if (p === '/api/admin/login' && method === 'POST') {
+    const ip = ipOf(req);
+    const hit = loginHits.get(ip);
+    if (hit && hit.n >= 8 && hit.until > Date.now()) return sendJSON(res, 429, { error: 'Too many attempts, wait a few minutes' });
+    return readJSON(req, res, (body) => {
+      if (samePassword(body.password)) {
+        loginHits.delete(ip);
+        return sendJSON(res, 200, { token: issueAdminToken() });
+      }
+      const cur = loginHits.get(ip) || { n: 0, until: 0 };
+      cur.n++; cur.until = Date.now() + 15 * 60 * 1000;
+      loginHits.set(ip, cur);
+      return sendJSON(res, 401, { error: 'Wrong password' });
+    });
+  }
+
+  if (p.indexOf('/api/admin/') === 0) {
+    if (!isAdmin(req)) return sendJSON(res, 401, { error: 'Not logged in' });
+
+    if (p === '/api/admin/state' && method === 'GET') {
+      return sendJSON(res, 200, {
+        words: store.db.words,
+        defaults: store.defaults(),
+        rooms: mgr.adminView(),
+        factionTags: FACTION_TAGS,
+        kindTags: KIND_TAGS
+      });
+    }
+    if (p === '/api/admin/words' && method === 'POST') {
+      return readJSON(req, res, (b) => {
+        const word = String(b.word || '').trim();
+        if (!word) return sendJSON(res, 400, { error: 'Word cannot be empty' });
+        const w = {
+          id: store.nextId(),
+          word: word.slice(0, 60),
+          hint: String(b.hint || '').trim().slice(0, 120),
+          aliases: Array.isArray(b.aliases) ? b.aliases.map((s) => String(s).trim()).filter(Boolean).slice(0, 12) : [],
+          tags: Array.isArray(b.tags) ? b.tags.map((s) => String(s).trim().toLowerCase()).filter(Boolean).slice(0, 12) : [],
+          enabled: b.enabled !== false
+        };
+        store.db.words.push(w);
+        store.save();
+        return sendJSON(res, 200, { word: w });
+      });
+    }
+    if (p === '/api/admin/words' && method === 'PUT') {
+      return readJSON(req, res, (b) => {
+        const w = findWord(b.id);
+        if (!w) return sendJSON(res, 404, { error: 'No such word' });
+        if ('word' in b) {
+          const nw = String(b.word || '').trim();
+          if (!nw) return sendJSON(res, 400, { error: 'Word cannot be empty' });
+          w.word = nw.slice(0, 60);
+        }
+        if ('hint' in b) w.hint = String(b.hint || '').trim().slice(0, 120);
+        if ('aliases' in b) w.aliases = (Array.isArray(b.aliases) ? b.aliases : []).map((s) => String(s).trim()).filter(Boolean).slice(0, 12);
+        if ('tags' in b) w.tags = (Array.isArray(b.tags) ? b.tags : []).map((s) => String(s).trim().toLowerCase()).filter(Boolean).slice(0, 12);
+        if ('enabled' in b) w.enabled = !!b.enabled;
+        store.save();
+        return sendJSON(res, 200, { word: w });
+      });
+    }
+    if (p === '/api/admin/words' && method === 'DELETE') {
+      return readJSON(req, res, (b) => {
+        const ids = Array.isArray(b.ids) ? b.ids.map(String) : (b.id ? [String(b.id)] : []);
+        const before = store.db.words.length;
+        store.db.words = store.db.words.filter((w) => ids.indexOf(w.id) === -1);
+        store.save();
+        return sendJSON(res, 200, { removed: before - store.db.words.length });
+      });
+    }
+    if (p === '/api/admin/words/bulk' && method === 'POST') {
+      return readJSON(req, res, (b) => {
+        const ids = Array.isArray(b.ids) ? b.ids.map(String) : [];
+        const set = new Set(ids);
+        let n = 0;
+        if (b.action === 'enable' || b.action === 'disable') {
+          for (const w of store.db.words) if (set.has(w.id)) { w.enabled = b.action === 'enable'; n++; }
+        } else if (b.action === 'tag' || b.action === 'untag') {
+          const tag = String(b.tag || '').trim().toLowerCase();
+          if (!tag) return sendJSON(res, 400, { error: 'No tag given' });
+          for (const w of store.db.words) {
+            if (!set.has(w.id)) continue;
+            const has = w.tags.indexOf(tag) !== -1;
+            if (b.action === 'tag' && !has) { w.tags.push(tag); n++; }
+            if (b.action === 'untag' && has) { w.tags = w.tags.filter((t) => t !== tag); n++; }
+          }
+        } else {
+          return sendJSON(res, 400, { error: 'Unknown action' });
+        }
+        store.save();
+        return sendJSON(res, 200, { changed: n });
+      });
+    }
+    if (p === '/api/admin/words/import' && method === 'POST') {
+      return readJSON(req, res, (b) => {
+        let items;
+        try { items = parseImport(b.text); }
+        catch (e) { return sendJSON(res, 400, { error: e.message }); }
+        if (!items.length) return sendJSON(res, 400, { error: 'Nothing to import' });
+        if (b.mode === 'replace') {
+          store.db.words = items.map((w) => Object.assign({ id: store.nextId() }, w));
+          store.save();
+          return sendJSON(res, 200, { added: items.length, skipped: 0, replaced: true });
+        }
+        const have = new Set(store.db.words.map((w) => w.word.toLowerCase()));
+        let added = 0, skipped = 0;
+        for (const it of items) {
+          if (have.has(it.word.toLowerCase())) { skipped++; continue; }
+          have.add(it.word.toLowerCase());
+          store.db.words.push(Object.assign({ id: store.nextId() }, it));
+          added++;
+        }
+        store.save();
+        return sendJSON(res, 200, { added: added, skipped: skipped });
+      });
+    }
+    if (p === '/api/admin/words/reseed' && method === 'POST') {
+      const seeded = store.seedWords();
+      if (!seeded.length) return sendJSON(res, 500, { error: 'Seed list unreadable' });
+      store.db.words = seeded;
+      store.db.seq = seeded.length + 1;
+      store.save();
+      return sendJSON(res, 200, { words: store.db.words.length });
+    }
+    if (p === '/api/admin/export' && method === 'GET') {
+      const body = JSON.stringify(store.db.words, null, 1);
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="fafscribbl-words.json"',
+        'Content-Length': Buffer.byteLength(body)
+      });
+      return res.end(body);
+    }
+    if (p === '/api/admin/defaults' && method === 'POST') {
+      return readJSON(req, res, (b) => {
+        store.db.defaults = sanitizeSettings(b, store.db.defaults);
+        store.save();
+        return sendJSON(res, 200, { defaults: store.defaults() });
+      });
+    }
+    if (p === '/api/admin/rooms/close' && method === 'POST') {
+      return readJSON(req, res, (b) => sendJSON(res, 200, { closed: mgr.close(b.code) }));
+    }
+    return sendJSON(res, 404, { error: 'Unknown admin endpoint' });
+  }
+
+  // ---- static
+  if (method !== 'GET' && method !== 'HEAD') return sendText(res, 405, 'Method not allowed');
+  if (p === '/' || /^\/r\/[A-Za-z0-9]{1,12}\/?$/.test(p)) return serveFile(res, path.join(PUBLIC_DIR, 'index.html'), false);
+  if (p === '/admin' || p === '/admin/') return serveFile(res, path.join(PUBLIC_DIR, 'admin.html'), false);
+
+  const rel = path.normalize(decodeURIComponent(p)).replace(/^(\.\.[\/\\])+/, '');
+  const file = path.join(PUBLIC_DIR, rel);
+  if (file.indexOf(PUBLIC_DIR) !== 0) return sendText(res, 403, 'Forbidden');
+  return serveFile(res, file, true);
+});
+
+// ---------------------------------------------------------------- websocket
+ws.attach(server, {
+  path: '/ws',
+  onConnection: (conn) => {
+    let room = null;
+    let player = null;
+
+    const hello = setTimeout(() => { if (!player) conn.close(4000, 'no hello'); }, 12000);
+
+    conn.on('close', () => {
+      clearTimeout(hello);
+      if (room && player) room.detach(player, conn);
+    });
+
+    conn.on('message', (raw) => {
+      let m;
+      try { m = JSON.parse(raw); } catch (e) { return; }
+      if (!m || typeof m !== 'object') return;
+
+      if (m.t === 'hello') {
+        if (player) return;
+        clearTimeout(hello);
+        // rejoin with an existing session token
+        if (m.token) {
+          const found = mgr.resolve(String(m.token));
+          if (found && (!m.code || found.room.code === String(m.code).toUpperCase())) {
+            room = found.room;
+            player = found.player;
+            room.attach(player, conn);
+            conn.sendJSON({ t: 'joined', token: player.token, code: room.code, you: player.id, rejoined: true });
+            room.system(player.name + ' reconnected', 'join');
+            room.pushState();
+            room.pushPlayers();
+            return;
+          }
+        }
+        if (m.create) {
+          room = mgr.create(m.settings || {});
+        } else {
+          room = mgr.get(m.code);
+          if (!room) return conn.sendJSON({ t: 'error', code: 'noroom', message: 'That lobby does not exist any more.' });
+          const max = room.settings.maxPlayers;
+          if (max && room.alive().length >= max) return conn.sendJSON({ t: 'error', code: 'full', message: 'That lobby is full.' });
+        }
+        player = room.addPlayer(m.name, conn);
+        mgr.register(room, player);
+        conn.sendJSON({ t: 'joined', token: player.token, code: room.code, you: player.id, created: !!m.create });
+        room.system(player.name + ' joined', 'join');
+        room.pushState();
+        room.pushPlayers();
+        return;
+      }
+
+      if (!room || !player) return;
+      player.lastSeen = Date.now();
+      room.touched = Date.now();
+
+      switch (m.t) {
+        case 'chat': room.handleChat(player, m.text); break;
+        case 'draw': room.handleDraw(player, m.ops); break;
+        case 'begin': room.handleBegin(player); break;
+        case 'undo': room.handleUndo(player); break;
+        case 'clearCanvas': room.handleClear(player); break;
+        case 'pick': room.pick(player.id, m.index, false); break;
+        case 'start': room.start(player.id); break;
+        case 'settings': room.updateSettings(player.id, m.settings); break;
+        case 'kick': room.kick(player.id, String(m.id || '')); break;
+        case 'skip': room.skip(player.id); break;
+        case 'lobby': room.backToLobby(player.id); break;
+        case 'sync': conn.sendJSON(room.stateFor(player)); break;
+        case 'ping': conn.sendJSON({ t: 'pong', now: Date.now() }); break;
+        default: break;
+      }
+    });
+  }
+});
+
+server.listen(PORT, HOST, () => {
+  console.log('[fafscribbl] listening on http://' + HOST + ':' + PORT);
+});
+
+process.on('uncaughtException', (e) => console.error('[fafscribbl] uncaught', e));
+process.on('unhandledRejection', (e) => console.error('[fafscribbl] unhandled rejection', e));

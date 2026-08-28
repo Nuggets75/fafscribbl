@@ -1,0 +1,15 @@
+{
+  "name": "fafscribbl",
+  "version": "1.0.0",
+  "description": "Draw and guess Supreme Commander: Forged Alliance Forever units. Zero runtime dependencies.",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "for f in server.js lib/*.js public/*.js; do node --check \"$f\" || exit 1; done",
+    "test": "node test/run.js"
+  },
+  "keywords": ["faf", "supreme-commander", "drawing", "game"],
+  "license": "ISC",
+  "engines": { "node": ">=18" }
+}
