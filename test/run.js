@@ -765,6 +765,25 @@ async function extraTests() {
   // restore the shipped groups for the rest of the run
   await api('/api/admin/filters', { method: 'POST', body: JSON.stringify({ groups: before }) }, adminToken);
 
+  // the host can switch unit pictures off, and then none are sent at all
+  const pv1 = await join('NoPic', { create: true, settings: { previews: false, wordChoices: 3, drawTime: 20, choiceTime: 4, rounds: 1 } });
+  const pv2 = await join('NoPic2', { code: pv1.code });
+  await sleep(200);
+  pv1.send({ t: 'start' });
+  const pvSt = await pv1.wait((m) => m.t === 'state' && m.state === 'choosing', 6000);
+  const pvDrawer = pvSt.drawerId === pv1.id ? pv1 : pv2;
+  const pvCh = await pvDrawer.wait((m) => m.t === 'choices', 4000);
+  eq(pvCh.icons.length, 0, 'no choice pictures are sent with previews off');
+  eq(pvDrawer.find((m) => m.t === 'state' && m.state === 'choosing').choosingIcons, null, 'and none in the state either');
+  pvDrawer.send({ t: 'pick', index: 0 });
+  const pvDraw = await pvDrawer.wait((m) => m.t === 'state' && m.state === 'drawing', 5000);
+  eq(pvDraw.wordIcon, null, 'the drawer gets no reference picture');
+  pvDrawer.send({ t: 'skip' });
+  const pvEnd = await pvDrawer.wait((m) => m.t === 'turnend', 6000);
+  eq(pvEnd.icon, '', 'and the reveal screen gets none');
+  pv1.close(); pv2.close();
+  await sleep(200);
+
   // the unit look-up searches notes and tags, in any order, and never returns maps
   const lu1 = await join('Look', { create: true });
   const lu2 = await join('Look2', { code: lu1.code });

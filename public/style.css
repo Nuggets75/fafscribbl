@@ -274,3 +274,8 @@ main{flex:1;display:grid;gap:10px;padding:10px;min-height:0;
   font-size:13px;cursor:pointer}
 .sfxlist input{width:auto;accent-color:var(--accent)}
 #sndPanel{width:290px}
+
+/* the reference button says what it does */
+.tool.wide{width:auto;padding:0 calc(11px * var(--ui));font-size:calc(13px * var(--ui));
+  font-weight:600;white-space:nowrap;color:var(--text)}
+.tool.wide.on{border-color:var(--accent);background:#2b2019;color:#fff}

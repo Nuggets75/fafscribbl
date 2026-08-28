@@ -329,6 +329,7 @@
         break;
       case 'state':
         offset = m.now - Date.now();
+        if (!S || m.state !== 'drawing' || m.wordIcon !== S.wordIcon) refShown = false;
         S = m;
         sizeCanvas();
         rebuild(m.canvas || []);
@@ -525,6 +526,7 @@
     $('setHints').value = String(s.hints ? s.hintCount : 0);
     $('setPublic').value = s.isPublic ? '1' : '0';
     $('setLookup').value = s.lookup === false ? '0' : '1';
+    $('setPreviews').value = s.previews === false ? '0' : '1';
     if (document.activeElement !== $('setCustom')) $('setCustom').value = s.customWords || '';
     $('setCustomOnly').checked = !!s.customWordsOnly;
     var tf = s.tagFilters || {};
@@ -534,7 +536,7 @@
     renderPoolInfo();
 
     var host = isHost();
-    ['setRounds', 'setTime', 'setMax', 'setChoices', 'setHints', 'setPublic', 'setLookup', 'setCustom', 'setCustomOnly'].forEach(function (id) {
+    ['setRounds', 'setTime', 'setMax', 'setChoices', 'setHints', 'setPublic', 'setLookup', 'setPreviews', 'setCustom', 'setCustomOnly'].forEach(function (id) {
       $(id).disabled = !host;
     });
     $('hostNote').textContent = host
@@ -592,13 +594,14 @@
       hintCount: hints > 0 ? hints : 1,
       isPublic: $('setPublic').value === '1',
       lookup: $('setLookup').value === '1',
+      previews: $('setPreviews').value === '1',
       customWords: $('setCustom').value,
       customWordsOnly: $('setCustomOnly').checked,
       tagFilters: tagFilters
     };
   }
   function pushSettings() { if (isHost()) send({ t: 'settings', settings: collectSettings() }); }
-  ['setRounds', 'setTime', 'setMax', 'setChoices', 'setHints', 'setPublic', 'setLookup', 'setCustomOnly'].forEach(function (id) {
+  ['setRounds', 'setTime', 'setMax', 'setChoices', 'setHints', 'setPublic', 'setLookup', 'setPreviews', 'setCustomOnly'].forEach(function (id) {
     $(id).addEventListener('change', pushSettings);
   });
   $('setCustom').addEventListener('blur', pushSettings);
@@ -714,6 +717,9 @@
   /* --------- the drawer's reference picture --------- */
   var refWidth = Number(ls('fs_ref_w')) || 180;
   var refPlaced = false;
+  // Deliberately not remembered. Every turn starts with the picture hidden, so seeing it
+  // is always something the drawer asked for.
+  var refShown = false;
   function refAvailable() { return !!(S && S.wordIcon); }
   function applyRefWidth(px) {
     refWidth = Math.max(90, Math.min(420, Math.round(px)));
@@ -721,16 +727,18 @@
     ls('fs_ref_w', String(refWidth));
   }
   function showRef(on) {
-    ls('fs_ref', on ? '1' : '0');
+    refShown = !!on;
     renderRef();
   }
   function renderRef() {
     var panel = $('refPanel');
+    // The button only exists when this particular unit actually has a picture.
     var can = refAvailable() && isDrawer() && S.state === 'drawing';
     $('toolRef').classList.toggle('hide', !can);
     if (!can) { panel.classList.add('hide'); return; }
-    var want = ls('fs_ref') !== '0';
+    var want = refShown;
     $('toolRef').classList.toggle('on', want);
+    $('toolRef').textContent = want ? 'Hide the picture' : 'What does this look like';
     panel.classList.toggle('hide', !want);
     if (want) {
       var src = '/icons/' + S.wordIcon;
@@ -759,7 +767,7 @@
     panel.style.left = Math.max(0, Math.min(maxL, parseInt(panel.style.left || '10', 10))) + 'px';
     panel.style.top = Math.max(0, Math.min(maxT, parseInt(panel.style.top || '12', 10))) + 'px';
   }
-  $('toolRef').onclick = function () { showRef(ls('fs_ref') === '0'); };
+  $('toolRef').onclick = function () { showRef(!refShown); };
   $('refClose').onclick = function () { showRef(false); };
   $('refBigger').onclick = function () { applyRefWidth(refWidth * 1.25); clampRef(); };
   $('refSmaller').onclick = function () { applyRefWidth(refWidth / 1.25); clampRef(); };

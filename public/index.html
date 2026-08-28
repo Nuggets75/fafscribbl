@@ -166,6 +166,13 @@
             </select>
           </div>
           <div>
+            <label for="setPreviews">Unit pictures</label>
+            <select id="setPreviews">
+              <option value="1">On, the drawer can look at the unit</option>
+              <option value="0">Off, no pictures anywhere</option>
+            </select>
+          </div>
+          <div>
             <label for="setLookup">Unit look-up box</label>
             <select id="setLookup">
               <option value="1">On, players can search unit names</option>
@@ -241,7 +248,7 @@
         <div class="tool" id="toolEraser" title="Eraser">&#9633;</div>
         <div class="tool" id="toolUndo" title="Undo">&#8630;</div>
         <div class="tool" id="toolClear" title="Clear everything">&#10005;</div>
-        <div class="tool hide" id="toolRef" title="Show what the unit looks like">&#128065;</div>
+        <button class="tool wide hide" id="toolRef" type="button">What does this look like</button>
       </div>
     </div>
 

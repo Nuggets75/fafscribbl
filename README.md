@@ -41,6 +41,7 @@ The container clones the repo and runs `server.js` directly, the same way faf-to
 | Word choices | 1 (assigned, no picking) to 5 | 3 |
 | Letter hints | off, or a minimum of 1-5 letters | 2 |
 | Unit look-up | on / off | on |
+| Unit pictures | on / off | on |
 | Visibility | private / public | private |
 | Word pool filters | one chip row per admin-defined tag group | nothing, tags are opt in |
 | Extra words | free text, optionally used on their own | empty |
@@ -116,13 +117,16 @@ That is the Factions group's **always include** tag, and it is editable like eve
   80% by default and adjustable from 40% to 100% in the display settings. It is measured against
   the live size of its container, with a `ResizeObserver` behind it, so it can never grow over
   the toolbar when the toolbar appears.
-- **The drawer gets a reference picture.** Every unit word carries the in-game build icon, shown
-  under each option on the pick screen and then in a small floating panel while drawing. The
-  panel parks itself in the empty gutter beside the board when there is one, and can be dragged
-  anywhere, resized, hidden and brought back with the eye button in the toolbar. Only its title
-  bar takes pointer events, so you can draw straight through the picture if it is over the board.
-  It is per browser and only the drawer ever sees it. The picture also appears on the reveal
-  screen once the word is out.
+- **The drawer can look at the unit.** Every unit word carries the in-game build icon, shown
+  under each option on the pick screen and available while drawing behind a
+  **What does this look like** button in the toolbar. The picture is **hidden until that button
+  is pressed**, and every turn starts hidden again, so seeing it is always a deliberate act. The
+  button only appears when that particular unit actually has a picture, and only the drawer ever
+  gets it. The panel parks itself in the empty gutter beside the board when there is one, and can
+  be dragged, resized and closed. Only its title bar takes pointer events, so you can draw
+  straight through the picture if it is over the board. The picture also appears on the reveal
+  screen once the word is out. The **Unit pictures** lobby setting turns the whole thing off, and
+  then no icon is sent to anybody.
 - Anyone who joins mid-turn gets the full drawing replayed instantly.
 - Only the current drawer can draw. The server enforces it, the toolbar is simply hidden for
   everybody else.
@@ -370,7 +374,8 @@ HTTP routes, the admin API, the whole game flow, the word list collapse rules, h
 guesses, chat visibility, drawing permissions, reconnection, kicking, host handover, filters and
 custom words, self-closing lobbies, the editable filter groups, the pool counter, tags that
 contain spaces, opt-in filtering, icon matching and uploads, the unit look-up and its map
-exclusion, hint scaling, and that no admin request can wipe the word list. 171 assertions.
+exclusion, hint scaling, the picture toggle, and that no admin request can wipe the word list.
+175 assertions.
 
 To catch undefined identifiers, which `node --check` cannot:
 
