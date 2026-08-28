@@ -60,6 +60,7 @@
     <div class="hdr-right">
       <div class="codepill" id="codePill" title="Copy the invite link">Lobby <b id="codeText">-----</b></div>
       <a class="codepill" id="dbLink2" href="https://faforever.github.io/etfreeman-db/#/" target="_blank" rel="noopener">Unit DB</a>
+      <button class="small ghost hide" id="settingsBtn">Lobby settings</button>
       <button class="small ghost" id="skipBtn">Skip turn</button>
       <button class="small ghost" id="leaveBtn">Leave</button>
     </div>
@@ -115,6 +116,7 @@
     <!-- game end -->
     <div class="ov full hide" id="ovGameEnd">
       <div class="ovbox">
+        <button class="ovclose" id="closeGameEnd" title="Close (Esc)">&#10005;</button>
         <h2>Game over</h2>
         <div class="podium" id="podium"></div>
         <div class="results" id="finalResults"></div>
@@ -125,6 +127,7 @@
     <!-- lobby -->
     <div class="ov full hide" id="ovLobby">
       <div class="ovbox">
+        <button class="ovclose" id="closeLobby" title="Close (Esc)">&#10005;</button>
         <h2>Lobby <span class="mono" id="lobbyCode"></span></h2>
         <p class="muted">Share the link, wait for players, then start.</p>
         <div class="inviteRow">

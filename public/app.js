@@ -13,6 +13,7 @@
   var cfg = { unitDb: 'https://faforever.github.io/etfreeman-db/#/', factionTags: [], kindTags: [], defaults: null };
   var sock = null, wantOpen = false, retry = 0, retryTimer = null;
   var me = null, S = null, offset = 0, leaving = false;
+  var lobbyHidden = false, gameEndHidden = false, lastState = null;
   var pendingJoin = null;
 
   /* ---------------------------------------------------------------- utils */
@@ -418,7 +419,7 @@
     cfg.factionTags.forEach(function (t) {
       var c = document.createElement('div');
       c.className = 'chip'; c.dataset.tag = t; c.dataset.kind = 'faction';
-      c.textContent = t === 'neutral' ? 'shared' : t;
+      c.textContent = t;
       c.onclick = function () { if (!isHost()) return; c.classList.toggle('on'); pushSettings(); };
       f.appendChild(c);
     });
@@ -516,6 +517,15 @@
     else prompt('Copy this link', text);
   }
   $('skipBtn').onclick = function () { send({ t: 'skip' }); };
+  $('settingsBtn').onclick = function () { lobbyHidden = false; renderOverlays(); renderLobby(); };
+  $('closeLobby').onclick = function () { lobbyHidden = true; renderOverlays(); };
+  $('closeGameEnd').onclick = function () { gameEndHidden = true; renderOverlays(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || !S) return;
+    if (e.target && /input|textarea/i.test(e.target.tagName)) return;
+    if (S.state === 'lobby' && !lobbyHidden) { lobbyHidden = true; renderOverlays(); }
+    else if (S.state === 'gameend' && !gameEndHidden) { gameEndHidden = true; renderOverlays(); }
+  });
   $('leaveBtn').onclick = function () {
     if (!confirm('Leave the lobby?')) return;
     disconnect();
@@ -525,10 +535,16 @@
   /* --------- overlays --------- */
   function renderOverlays() {
     if (!S) return;
-    $('ovLobby').classList.toggle('hide', S.state !== 'lobby');
+    if (S.state !== lastState) {
+      if (S.state === 'lobby') lobbyHidden = false;
+      lastState = S.state;
+    }
+    $('settingsBtn').classList.toggle('hide', S.state !== 'lobby');
+    $('ovLobby').classList.toggle('hide', S.state !== 'lobby' || lobbyHidden);
     if (S.state !== 'choosing') $('ovChoose').classList.add('hide');
     if (S.state !== 'turnend') $('ovTurnEnd').classList.add('hide');
     if (S.state !== 'gameend') $('ovGameEnd').classList.add('hide');
+    else $('ovGameEnd').classList.toggle('hide', gameEndHidden);
     if (S.state === 'choosing') {
       if (isDrawer() && S.choosing) showChoices(S.choosing, S.endsAt);
       else showWaitingChoice();
@@ -574,6 +590,7 @@
     renderHeader();
   }
   function showGameEnd(m) {
+    gameEndHidden = false;
     if (S) { S.state = 'gameend'; S.endsAt = m.endsAt; }
     $('ovChoose').classList.add('hide');
     $('ovTurnEnd').classList.add('hide');

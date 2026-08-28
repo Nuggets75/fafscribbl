@@ -129,8 +129,11 @@ main{flex:1;display:grid;grid-template-columns:210px 1fr 300px;gap:10px;padding:
 .ov{position:absolute;inset:0;background:#0b0f14ee;display:flex;align-items:center;
   justify-content:center;z-index:5;padding:14px;overflow:auto}
 .ov.full{position:fixed;z-index:20}
-.ovbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;
+.ovbox{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;
   max-width:620px;width:100%;text-align:center}
+.ovclose{position:absolute;top:10px;right:10px;width:30px;height:30px;padding:0;line-height:1;
+  background:var(--panel2);border:1px solid var(--line);color:var(--dim);font-size:15px}
+.ovclose:hover{color:var(--text);border-color:var(--accent)}
 .ovbox h2{margin:0 0 4px;font-size:22px}
 .ov.full .ovbox{max-height:92vh;overflow:auto}
 .ovbox .muted{color:var(--dim);margin:0 0 16px;font-size:14px}

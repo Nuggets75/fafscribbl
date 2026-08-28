@@ -304,14 +304,6 @@ const server = http.createServer((req, res) => {
         return sendJSON(res, 200, { added: added, skipped: skipped });
       });
     }
-    if (p === '/api/admin/words/reseed' && method === 'POST') {
-      const seeded = store.seedWords();
-      if (!seeded.length) return sendJSON(res, 500, { error: 'Seed list unreadable' });
-      store.db.words = seeded;
-      store.db.seq = seeded.length + 1;
-      store.save();
-      return sendJSON(res, 200, { words: store.db.words.length });
-    }
     if (p === '/api/admin/export' && method === 'GET') {
       const body = JSON.stringify(store.db.words, null, 1);
       res.writeHead(200, {

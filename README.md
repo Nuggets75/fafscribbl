@@ -19,9 +19,13 @@ The container clones the repo and runs `server.js` directly, the same way faf-to
 - Public lobbies are listed on the front page. Private lobbies are link only. Toggle per lobby.
 - The creator is the host. If the host leaves, the crown moves to the next player automatically.
 - The host can kick players.
+- The lobby panel closes with its X or with Esc, so you can use the chat while waiting. The
+  **Lobby settings** button in the header brings it back.
 - Reloading the page or losing the connection rejoins the same seat with the same score for
   60 seconds. Reconnection is automatic, with backoff.
-- A lobby with nobody in it is dropped after 45 minutes.
+- A lobby drops itself 60 seconds after the last player leaves, so empty lobbies never pile up
+  in the admin list. The minute of grace is there so a lone host can reload without losing it.
+  A backstop sweep clears anything still empty after 10 minutes.
 
 ### Lobby settings (host only, applied to the next game)
 | Setting | Range | Default |
@@ -32,7 +36,7 @@ The container clones the repo and runs `server.js` directly, the same way faf-to
 | Word choices | 1 (assigned, no picking) to 5 | 3 |
 | Letter hints | off, or 1-5 letters | 2 |
 | Visibility | private / public | private |
-| Faction filter | uef, cybran, aeon, seraphim, shared, nomads | all |
+| Faction filter | uef, cybran, aeon, seraphim, nomads | all |
 | Unit type filter | land, air, naval, structure, experimental | all |
 | Extra words | free text, optionally used on their own | empty |
 
@@ -41,6 +45,10 @@ host) presses **Skip turn**. Scoring falls back to guess order instead of the cl
 
 Selecting nothing in a filter means everything. Selecting a filter that leaves no words falls
 back to the full list rather than breaking the game.
+
+The 20 faction-less words (mexes, pgens, radar, sonar, gateway, nuke, SMD, T1 PD and so on carry
+the `neutral` tag) are **always kept when a faction filter is on**, because they belong to every
+faction. Picking `uef` gives you UEF units plus those shared buildings, not a game without mexes.
 
 ### A round
 1. A round is one full pass: every player draws once, in a shuffled order. `rounds` full passes,
@@ -115,8 +123,10 @@ Wrong passwords are rate limited per IP.
 - **Live lobbies**: every lobby on the server, who is in it, what is being drawn right now, and
   a button to close one.
 - **Import / export**: import plain lines or a JSON export, merging (duplicates skipped) or
-  replacing. Export downloads the whole list including disabled words. Reset reloads the list
-  that ships with the repo.
+  replacing. Export downloads the whole list including disabled words, and importing that file
+  back with **Replace the whole list** is how you undo a bad edit. There is deliberately no
+  one-click "reset everything" button, because everyone who knows the admin password would have
+  it.
 
 Import line format, everything after the word optional:
 
@@ -167,6 +177,7 @@ start. App listens on port **8092**.
 | `ADMIN_PASSWORD` | *(random, printed to the log)* | password for `/admin` |
 | `UNIT_DB_URL` | `https://faforever.github.io/etfreeman-db/#/` | where the "Unit DB" button points |
 | `SITE_NAME` | `fafscribbl` | shown in the API config |
+| `FAFSCRIBBL_EMPTY_MS` | `60000` | how long an empty lobby is held open, testing knob |
 
 If `ADMIN_PASSWORD` is not set the server generates one, prints it to the container log and
 carries on, so a missing variable never stops the site from running. It changes on every restart,
@@ -238,7 +249,7 @@ npm test           # end to end suite, needs node 22+ for the WebSocket client
 The test suite starts a real server on a random port and drives it over real WebSockets:
 HTTP routes, the admin API, the whole game flow, the word list collapse rules, hints, close
 guesses, chat visibility, drawing permissions, reconnection, kicking, host handover, filters and
-custom words. 98 assertions.
+custom words, and that abandoned lobbies close themselves. 104 assertions.
 
 To catch undefined identifiers, which `node --check` cannot:
 

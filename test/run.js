@@ -67,7 +67,7 @@ async function api(pathname, opts, token) {
 
 async function main() {
   const srv = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
-    env: Object.assign({}, process.env, { PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: PW }),
+    env: Object.assign({}, process.env, { PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: PW, FAFSCRIBBL_EMPTY_MS: '2000' }),
     stdio: ['ignore', 'pipe', 'pipe']
   });
   let log = '';
@@ -182,13 +182,14 @@ async function adminTests() {
   eq(imp.body.added, 2, 'import added the new lines');
   eq(imp.body.skipped, 1, 'import skipped the duplicate');
 
+  const del = await api('/api/admin/words', { method: 'DELETE', body: JSON.stringify({ ids: [id] }) }, adminToken);
+  eq(del.body.removed, 1, 'word deleted');
+
   const exp = await fetch(BASE + '/api/admin/export', { headers: { 'x-admin-token': adminToken } });
   eq(exp.status, 200, 'export downloads');
   const expJson = await exp.json();
-  ok(Array.isArray(expJson) && expJson.length > total, 'export contains every word');
+  ok(Array.isArray(expJson) && expJson.length >= total, 'export contains every word');
 
-  const del = await api('/api/admin/words', { method: 'DELETE', body: JSON.stringify({ ids: [id] }) }, adminToken);
-  eq(del.body.removed, 1, 'word deleted');
 
   // persistence: the store writes to disk
   await sleep(200);
@@ -196,9 +197,13 @@ async function adminTests() {
   ok(raw.words.some((w) => w.word === 'Imported One'), 'changes persisted to disk');
 
   const re = await api('/api/admin/words/reseed', { method: 'POST' }, adminToken);
-  eq(re.status, 200, 'reseed works');
+  eq(re.status, 404, 'the reset-to-shipped-list endpoint is gone');
+  const replace = await api('/api/admin/words/import', {
+    method: 'POST', body: JSON.stringify({ text: JSON.stringify(expJson), mode: 'replace' })
+  }, adminToken);
+  eq(replace.body.replaced, true, 'a full JSON export can be imported back as a replace');
   const after = await api('/api/admin/state', {}, adminToken);
-  eq(after.body.words.length, total, 'reseed restored the shipped list');
+  eq(after.body.words.length, expJson.length, 'restoring from an export gives the list back');
 
   const defs = await api('/api/admin/defaults', {
     method: 'POST', body: JSON.stringify({ rounds: 4, drawTime: 45, wordChoices: 2 })
@@ -480,7 +485,9 @@ async function edgeTests() {
   const fw = fd.find((m) => m.t === 'state' && m.state === 'drawing').word;
   const stAll = await api('/api/admin/state', {}, adminToken);
   const entry = stAll.body.words.find((w) => w.word === fw);
-  ok(entry && entry.tags.indexOf('seraphim') !== -1 && entry.tags.indexOf('air') !== -1, 'faction and type filter respected, got ' + fw);
+  ok(entry && entry.tags.indexOf('air') !== -1 &&
+    (entry.tags.indexOf('seraphim') !== -1 || entry.tags.indexOf('neutral') !== -1),
+    'faction and type filter respected, got ' + fw + ' [' + (entry ? entry.tags.join(' ') : '?') + ']');
   f1.close(); f2.close();
   await sleep(200);
 }
@@ -527,6 +534,52 @@ async function extraTests() {
   eq(st2.players.length, 2, 'no ghost player was created');
   again.close(); n1.close(); n2.close();
   await sleep(200);
+
+  // a faction filter keeps the faction-less words and nothing from other factions
+  const ff1 = await join('Filt', { create: true, settings: { factions: ['uef'], wordChoices: 5, drawTime: 0, rounds: 1 } });
+  const ff2 = await join('Filt2', { code: ff1.code });
+  await sleep(150);
+  ff1.send({ t: 'start' });
+  await ff1.wait((m) => m.t === 'state' && m.state === 'choosing', 6000);
+  const offered = (await (ff1.find((m) => m.t === 'choices') ? ff1 : ff2).wait((m) => m.t === 'choices', 4000)).words;
+  const all = (await api('/api/admin/state', {}, adminToken)).body.words;
+  const tagsOf = (w) => (all.find((x) => x.word === w) || { tags: [] }).tags;
+  const bad = offered.filter((w) => {
+    const t = tagsOf(w);
+    return t.indexOf('uef') === -1 && t.indexOf('neutral') === -1;
+  });
+  eq(bad.length, 0, 'a uef filter offers only uef and faction-less words: ' + offered.join(', '));
+  ff1.close(); ff2.close();
+  await sleep(200);
+
+  // an abandoned lobby closes itself
+  const e1 = await join('Leaver', { create: true });
+  const e2 = await join('Leaver2', { code: e1.code });
+  const deadCode = e1.code;
+  await sleep(150);
+  ok((await api('/api/admin/state', {}, adminToken)).body.rooms.some((r) => r.code === deadCode), 'the lobby is listed while it has players');
+  e1.close(); e2.close();
+  await sleep(3500);
+  const list = (await api('/api/admin/state', {}, adminToken)).body.rooms;
+  ok(!list.some((r) => r.code === deadCode), 'an empty lobby drops itself');
+  const ghost = new C('Ghost2');
+  await ghost.ready;
+  ghost.send({ t: 'hello', name: 'Ghost2', code: deadCode });
+  const gone = await ghost.wait((m) => m.t === 'error');
+  eq(gone.code, 'noroom', 'and its code stops working');
+  ghost.close();
+
+  // the same cleanup survives a lobby that emptied out mid game
+  const mid1 = await join('Mid', { create: true, settings: { wordChoices: 1, drawTime: 0, rounds: 1 } });
+  const mid2 = await join('Mid2', { code: mid1.code });
+  const midCode = mid1.code;
+  await sleep(150);
+  mid1.send({ t: 'start' });
+  await mid1.wait((x) => x.t === 'state' && x.state === 'drawing', 6000);
+  mid1.close(); mid2.close();
+  await sleep(3500);
+  ok(!(await api('/api/admin/state', {}, adminToken)).body.rooms.some((r) => r.code === midCode),
+    'a lobby abandoned mid game drops itself too');
 
   // host leaving hands the crown over
   const o1 = await join('Owner', { create: true });

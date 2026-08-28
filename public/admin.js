@@ -126,8 +126,18 @@
       var td0 = document.createElement('td'); td0.className = 'c';
       var cb = document.createElement('input');
       cb.type = 'checkbox'; cb.style.width = 'auto'; cb.checked = !!selected[w.id];
-      cb.onchange = function () { selected[w.id] = cb.checked; updateSel(); };
+      cb.onchange = function () { setSelected(w.id, cb.checked, tr); };
       td0.appendChild(cb); tr.appendChild(td0);
+
+      // clicking anywhere on the row selects it, except on the fields and buttons
+      tr.classList.toggle('sel', !!selected[w.id]);
+      tr.onclick = function (e) {
+        if (e.target.closest('input[type=text], textarea, button, select')) return;
+        if (e.target === cb) return;
+        var next = !selected[w.id];
+        cb.checked = next;
+        setSelected(w.id, next, tr);
+      };
 
       tr.appendChild(field(w, 'word'));
       tr.appendChild(field(w, 'hint'));
@@ -135,14 +145,22 @@
       tr.appendChild(field(w, 'tags'));
 
       var td5 = document.createElement('td'); td5.className = 'c';
-      var en = document.createElement('input');
-      en.type = 'checkbox'; en.style.width = 'auto'; en.checked = !!w.enabled;
-      en.onchange = function () { save(w, { enabled: en.checked }, tr); };
+      var en = document.createElement('button');
+      en.className = 'small onbtn' + (w.enabled ? '' : ' off');
+      en.innerHTML = w.enabled ? '&#10003;' : '&#10005;';
+      en.title = w.enabled ? 'Enabled, click to turn off' : 'Disabled, click to turn on';
+      en.onclick = function () {
+        var next = !w.enabled;
+        en.className = 'small onbtn' + (next ? '' : ' off');
+        en.innerHTML = next ? '&#10003;' : '&#10005;';
+        en.title = next ? 'Enabled, click to turn off' : 'Disabled, click to turn on';
+        save(w, { enabled: next }, tr);
+      };
       td5.appendChild(en); tr.appendChild(td5);
 
       var td6 = document.createElement('td'); td6.className = 'c';
       var del = document.createElement('button');
-      del.className = 'small danger'; del.textContent = 'x'; del.title = 'Delete';
+      del.className = 'small danger delbtn'; del.innerHTML = '&#10005;'; del.title = 'Delete';
       del.onclick = function () {
         if (!confirm('Delete "' + w.word + '"?')) return;
         api('/api/admin/words', { method: 'DELETE', body: JSON.stringify({ ids: [w.id] }) })
@@ -218,6 +236,11 @@
     mk('>', Math.min(pages, page + 1), false);
   }
 
+  function setSelected(id, on, tr) {
+    selected[id] = on;
+    if (tr) tr.classList.toggle('sel', on);
+    updateSel();
+  }
   function updateSel() {
     $('selCount').textContent = selCount() + ' selected';
   }
@@ -228,10 +251,23 @@
   $('filterTag').onchange = function () { page = 1; renderRows(); };
   $('pageSize').onchange = function () { page = 1; renderRows(); };
   $('selAll').onclick = function () {
-    Array.prototype.forEach.call(document.querySelectorAll('#rows tr'), function (tr) { selected[tr.dataset.id] = true; });
-    renderRows();
+    Array.prototype.forEach.call(document.querySelectorAll('#rows tr'), function (tr) {
+      selected[tr.dataset.id] = true;
+      tr.classList.add('sel');
+      var cb = tr.querySelector('td.c input[type=checkbox]');
+      if (cb) cb.checked = true;
+    });
+    updateSel();
   };
-  $('selNone').onclick = function () { selected = {}; renderRows(); };
+  $('selNone').onclick = function () {
+    selected = {};
+    Array.prototype.forEach.call(document.querySelectorAll('#rows tr'), function (tr) {
+      tr.classList.remove('sel');
+      var cb = tr.querySelector('td.c input[type=checkbox]');
+      if (cb) cb.checked = false;
+    });
+    updateSel();
+  };
 
   function bulk(action, tag) {
     var ids = selectedIds();
@@ -321,12 +357,12 @@
   function renderRooms() {
     var tb = $('roomRows');
     tb.innerHTML = '';
-    $('roomStat').textContent = rooms.length + ' lobbies';
+    $('roomStat').textContent = rooms.length + (rooms.length === 1 ? ' lobby' : ' lobbies');
     rooms.forEach(function (r) {
       var tr = document.createElement('tr');
       tr.innerHTML = '<td class="mono"><b>' + esc(r.code) + '</b>' + (r.isPublic ? ' <span class="hint">public</span>' : '') + '</td>' +
         '<td>' + esc(r.state) + '</td>' +
-        '<td>' + (r.round || '-') + '/' + r.rounds + '</td>' +
+        '<td>' + (r.round ? r.round + '/' + r.rounds : '-') + '</td>' +
         '<td>' + r.online + ' online <span class="hint">' + esc(r.names.join(', ')) + '</span></td>' +
         '<td>' + esc(r.word || '-') + '</td>';
       var td = document.createElement('td');
@@ -369,14 +405,6 @@
         setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
       }).catch(function () { toast('Export failed'); });
   };
-  $('reseedBtn').onclick = function () {
-    if (!confirm('Throw away every change and reload the shipped word list?')) return;
-    api('/api/admin/words/reseed', { method: 'POST' })
-      .then(function () { return api('/api/admin/state'); })
-      .then(function (d) { words = d.words; selected = {}; fillTagFilter(); renderRows(); toast('Reset done'); })
-      .catch(function (e) { toast(e.message); });
-  };
-
   /* ------------------------------------------------------------- start */
   try {
     var saved = sessionStorage.getItem('fs_admin');
