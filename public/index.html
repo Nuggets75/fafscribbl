@@ -82,6 +82,7 @@
     <div class="hdr-right">
       <div class="codepill" id="codePill" title="Copy the invite link">Lobby <b id="codeText">-----</b></div>
       <a class="codepill" id="dbLink2" href="https://faforever.github.io/etfreeman-db/#/" target="_blank" rel="noopener">Unit DB</a>
+      <button class="small ghost" id="lkBtn" title="Unit look-up">&#128269;</button>
       <button class="small ghost" id="pauseBtn">Pause</button>
       <button class="small ghost" id="skipBtn">Skip turn</button>
       <button class="small ghost" id="sndBtn" title="Sound">&#128266;</button>
@@ -124,7 +125,7 @@
     <div class="panel" id="leftCol">
       <div id="players"></div>
       <div id="lookup" class="hide">
-        <div class="lkhead">Unit look-up</div>
+        <div class="lkhead">Unit look-up<button class="small ghost" id="lkClose">&#10005;</button></div>
         <input id="lkInput" placeholder="aeon t1 scout" autocomplete="off" maxlength="60">
         <div id="lkResults"><p class="lkhint">Describe a unit and this finds its name. Order does not matter.</p></div>
       </div>

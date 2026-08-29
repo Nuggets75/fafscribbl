@@ -94,7 +94,7 @@ That is the Factions group's **always include** tag, and it is editable like eve
    the points scored. The reveal panel covers the whole middle column, not just the board, and
    the picture and the word stay pinned while the list of players scrolls, so a full lobby on a
    short window never pushes the unit off the top. On a window under 760px tall the picture sits
-   beside the word instead of above it to hand the list back the space.
+   right beside the word instead of above it, to hand the list back the space.
 8. The host can pause at any point and nothing moves until he starts it again. See **Pause**.
 
 ### Pause
@@ -112,6 +112,19 @@ forward by the length of the pause, so a pause costs the drawer nothing.
 There is no vote and no limit. It is the host's button, for as long as he wants, which is the
 point: people play this alongside another game. A turn that starts during a pause (the drawer
 left, say) starts paused too rather than quietly running down.
+
+### Phones
+
+The site works on a phone, and nothing about it changes on a desktop. Under 860px wide the
+layout becomes one column: the board full width at the top, then a player strip you swipe
+sideways, then the chat. The header collapses to two rows, controls above and the word on its own
+line underneath, and the wordmark, the lobby code pill and the Unit DB link step aside to make
+room. The reveal, the pick screen and the pause panel take the whole screen rather than the board
+rectangle, and the unit look-up becomes a sheet you pull up from the magnifier in the header.
+
+Drawing works with a finger. Every size in the mobile block is a fixed pixel value rather than a
+multiple of the interface-size slider, because that slider is a desktop comfort setting stored per
+browser and a 390px screen cannot afford somebody's 160%.
 
 ### Matching
 - Case, spaces, hyphens, apostrophes and accents are all ignored. `sou-atha`, `Sou Atha` and
@@ -457,6 +470,9 @@ exclusion, hint scaling, the picture toggle, the saved drawing store and its cap
 single player run from start to highscore, including that the answer is never sent to the
 browser and that a finished run cannot be banked twice, the host pause down to the second the
 clock is handed back, and the host role moving when the host leaves. 256 assertions.
+
+The browser suites additionally drive a real iPhone viewport: the layout, the look-up sheet,
+drawing with a finger, and that a 1500px desktop is left exactly as it was.
 
 To catch undefined identifiers, which `node --check` cannot:
 

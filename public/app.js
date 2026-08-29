@@ -60,9 +60,20 @@
 
   // Keep the board as large as the panel allows while holding the 900x560 ratio exactly.
   var boardPct = 80;
+  function isPhone() { return window.innerWidth <= 860; }
   function sizeCanvas() {
     var area = $('canvasArea');
-    if (!area || !area.clientWidth || !area.clientHeight) return;
+    if (!area || !area.clientWidth) return;
+    // On a phone the board is simply as wide as the column. There is no spare height to give
+    // it a share of, and the board-size slider is a desktop comfort setting.
+    if (isPhone()) {
+      var wp = Math.floor(area.clientWidth);
+      var wrapM = $('canvasWrap');
+      wrapM.style.width = wp + 'px';
+      wrapM.style.height = Math.floor(wp * LH / LW) + 'px';
+      return;
+    }
+    if (!area.clientHeight) return;
     var scale = Math.min(area.clientWidth / LW, area.clientHeight / LH) * (boardPct / 100);
     if (!isFinite(scale) || scale <= 0) return;
     var wrap = $('canvasWrap');
@@ -81,7 +92,7 @@
     bctx.clearRect(0, 0, board.width, board.height);
     bctx.drawImage(off, 0, 0, board.width, board.height);
   }
-  window.addEventListener('resize', blit);
+  window.addEventListener('resize', function () { blit(); if (S) renderHeader(); });
   if (typeof ResizeObserver === 'function') {
     var ro = new ResizeObserver(function () { sizeCanvas(); blit(); });
     setTimeout(function () { var a = $('canvasArea'); if (a) ro.observe(a); }, 0);
@@ -380,7 +391,8 @@
     $('codeText').textContent = S.code;
     if (S.state === 'lobby') $('roundBox').textContent = 'Lobby';
     else if (S.state === 'gameend') $('roundBox').textContent = 'Finished';
-    else $('roundBox').textContent = 'Round ' + S.round + '/' + S.rounds;
+    // "Round 1/3" does not fit beside six buttons on a phone, so it becomes "1/3" there.
+    else $('roundBox').textContent = (isPhone() ? '' : 'Round ') + S.round + '/' + S.rounds;
 
     var sub = 'waiting', mask = '';
     if (S.state === 'choosing') {
@@ -863,6 +875,7 @@
   $('leaveBtn').onclick = function () {
     if (!confirm('Leave the lobby?')) return;
     document.body.classList.remove('ispaused');
+    document.body.classList.remove('lkopen');
     disconnect();
     location.href = '/';
   };
@@ -985,8 +998,18 @@
   var lkTimer = null;
   function lookupEnabled() { return !!(S && S.settings && S.settings.lookup); }
   function renderLookup() {
-    $('lookup').classList.toggle('hide', !lookupEnabled());
+    var on = lookupEnabled();
+    $('lookup').classList.toggle('hide', !on);
+    // On a phone the look-up is a sheet behind the magnifier, so the button goes with it.
+    $('lkBtn').classList.toggle('hide', !on);
+    if (!on) document.body.classList.remove('lkopen');
   }
+  function openLookup(on) {
+    document.body.classList.toggle('lkopen', !!on);
+    if (on) { try { $('lkInput').focus(); } catch (e) { /* ignore */ } }
+  }
+  $('lkBtn').onclick = function () { openLookup(!document.body.classList.contains('lkopen')); };
+  $('lkClose').onclick = function () { openLookup(false); };
   function runLookup() {
     var q = $('lkInput').value.trim();
     if (!q) {
