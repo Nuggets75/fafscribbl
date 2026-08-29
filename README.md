@@ -91,7 +91,10 @@ That is the Factions group's **always include** tag, and it is editable like eve
    blocked with a warning that only the drawer sees.
 7. The turn ends when everyone has guessed, when the clock runs out, when the drawer presses
    Skip turn, or when the drawer disconnects. The word is then revealed to everybody along with
-   the points scored.
+   the points scored. The reveal panel covers the whole middle column, not just the board, and
+   the picture and the word stay pinned while the list of players scrolls, so a full lobby on a
+   short window never pushes the unit off the top. On a window under 760px tall the picture sits
+   beside the word instead of above it to hand the list back the space.
 8. The host can pause at any point and nothing moves until he starts it again. See **Pause**.
 
 ### Pause
@@ -453,7 +456,7 @@ contain spaces, opt-in filtering, icon matching and uploads, the unit look-up an
 exclusion, hint scaling, the picture toggle, the saved drawing store and its cap, and the whole
 single player run from start to highscore, including that the answer is never sent to the
 browser and that a finished run cannot be banked twice, the host pause down to the second the
-clock is handed back, and the host role moving when the host leaves. 257 assertions.
+clock is handed back, and the host role moving when the host leaves. 256 assertions.
 
 To catch undefined identifiers, which `node --check` cannot:
 

@@ -238,17 +238,21 @@
           </div>
         </div>
 
-        <!-- turn end -->
-        <div class="ov hide" id="ovTurnEnd">
-          <div class="ovbox">
-            <h2>Turn over</h2>
-            <img id="revealIcon" class="revealicon hide" alt="">
-        <div class="revealword" id="revealWord"></div>
-            <div class="results" id="turnResults"></div>
-          </div>
-        </div>
 
       </div>
+      </div>
+
+      <!-- turn end: a child of the stage, not of the board, so a full lobby's results have
+           the whole column to use instead of just the white rectangle -->
+      <div class="ov hide" id="ovTurnEnd">
+        <div class="ovbox">
+          <h2>Turn over</h2>
+          <div class="revealhead">
+            <img id="revealIcon" class="revealicon hide" alt="">
+            <div class="revealword" id="revealWord"></div>
+          </div>
+          <div class="results" id="turnResults"></div>
+        </div>
       </div>
 
       <div id="refPanel" class="hide">

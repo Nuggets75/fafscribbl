@@ -142,17 +142,43 @@ main{flex:1;display:grid;gap:10px;padding:10px;min-height:0;
 #chatinput{flex:1}
 
 /* overlays */
-.ov{position:absolute;inset:0;background:#0b0f14ee;display:flex;align-items:center;
+/* align-items:center would clip the top of a box taller than the overlay and make it
+   impossible to scroll back up to. margin:auto centres it and still scrolls properly. */
+.ov{position:absolute;inset:0;background:#0b0f14ee;display:flex;align-items:flex-start;
   justify-content:center;z-index:5;padding:14px;overflow:auto}
 .ov.full{position:fixed;z-index:20}
 .ovbox{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;
   padding:calc(22px * var(--ui));max-width:calc(620px * var(--ui));width:100%;text-align:center;
-  font-size:calc(15px * var(--ui))}
+  font-size:calc(15px * var(--ui));margin:auto}
 .ovclose{position:absolute;top:10px;right:10px;width:30px;height:30px;padding:0;line-height:1;
   background:var(--panel2);border:1px solid var(--line);color:var(--dim);font-size:15px}
 .ovclose:hover{color:var(--text);border-color:var(--accent)}
 .ovbox h2{margin:0 0 4px;font-size:calc(22px * var(--ui))}
-.ov.full .ovbox{max-height:92vh;overflow:auto}
+.ov.full .ovbox{max-height:92vh}
+/* Reveal and final scoreboard: the picture and the word stay put and the list of players is
+   what scrolls, so a full lobby never pushes the unit off the top of a short window. */
+/* It sits over the whole stage column, above the toolbar, which is hidden by then anyway. */
+#ovTurnEnd{z-index:12}
+#ovTurnEnd .ovbox,#ovGameEnd .ovbox{max-height:100%;display:flex;flex-direction:column;min-height:0}
+.revealhead{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+/* On a short window the picture goes beside the word instead of above it, which hands the
+   player list back the vertical space it needs in a full lobby. */
+@media(max-height:760px){
+  .revealhead{flex-direction:row;gap:16px}
+  .revealhead .revealword{margin:0}
+  .revealicon{width:74px;height:74px;max-height:74px;margin:0}
+  #ovTurnEnd .ovbox h2{font-size:calc(17px * var(--ui));margin-bottom:2px}
+  #ovTurnEnd .ovbox{padding:calc(14px * var(--ui))}
+}
+#ovTurnEnd .ovbox > *,#ovGameEnd .ovbox > *{flex:0 0 auto}
+#ovTurnEnd .results,#ovGameEnd .results{overflow:auto;min-height:0;flex:1 1 auto;
+  width:100%;max-width:380px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+/* A visible track, so it is obvious there are more players below the fold. */
+#ovTurnEnd .results::-webkit-scrollbar,#ovGameEnd .results::-webkit-scrollbar{width:9px}
+#ovTurnEnd .results::-webkit-scrollbar-thumb,#ovGameEnd .results::-webkit-scrollbar-thumb{
+  background:var(--line);border-radius:5px}
+#ovTurnEnd .results::-webkit-scrollbar-thumb:hover,#ovGameEnd .results::-webkit-scrollbar-thumb:hover{
+  background:var(--dim)}
 .ovbox .muted{color:var(--dim);margin:0 0 16px;font-size:14px}
 .choices{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .choices button{padding:calc(14px * var(--ui)) calc(18px * var(--ui));font-size:calc(16px * var(--ui));
@@ -224,7 +250,9 @@ main{flex:1;display:grid;gap:10px;padding:10px;min-height:0;
 .refbar span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .refbar button{padding:1px 6px;font-size:12px;line-height:1.3}
 #refImg{display:block;width:100%;height:auto;background:#0c1016;image-rendering:auto}
-.revealicon{width:96px;height:96px;object-fit:contain;image-rendering:auto;margin:0 auto 4px;display:block}
+/* Shrinks with the window so a short viewport never crops it. */
+.revealicon{width:96px;height:96px;max-height:min(96px, 16vh);object-fit:contain;
+  image-rendering:auto;margin:0 auto 4px;display:block}
 
 /* icons in the admin table and the pick screen */
 .choiceicon{width:56px;height:56px;object-fit:contain;display:block;margin:0 auto 2px}
