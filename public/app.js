@@ -396,11 +396,11 @@
 
     var sub = 'waiting', mask = '';
     if (S.state === 'choosing') {
-      sub = isDrawer() ? 'pick a unit' : 'the drawer is choosing';
+      sub = isDrawer() ? 'pick a word' : 'the drawer is choosing';
     } else if (S.state === 'drawing') {
       if (isDrawer()) { sub = 'you are drawing'; mask = S.word || ''; }
       else if (S.word) { sub = 'you got it'; mask = S.word; }
-      else { sub = 'guess the unit - ' + countLetters(S.mask) + ' letters'; mask = S.mask || ''; }
+      else { sub = 'guess the word - ' + countLetters(S.mask) + ' letters'; mask = S.mask || ''; }
     } else if (S.state === 'turnend') {
       sub = 'the word was'; mask = S.word || '';
     } else if (S.state === 'lobby') {
@@ -907,8 +907,8 @@
     $('chooseList').innerHTML = '';
   }
   function showChoices(list, hints) {
-    $('chooseTitle').textContent = 'Choose a unit to draw';
-    $('chooseSub').textContent = 'Only you see these. Nobody else sees what the units are.';
+    $('chooseTitle').textContent = 'Choose a word to draw';
+    $('chooseSub').textContent = 'Only you see these. Nobody else sees what the words are.';
     var box = $('chooseList');
     box.innerHTML = '';
     (list || []).forEach(function (w, i) {
@@ -937,7 +937,7 @@
     $('ovChoose').classList.remove('hide');
   }
   function showWaitingChoice() {
-    $('chooseTitle').textContent = drawerName() + ' is choosing a unit';
+    $('chooseTitle').textContent = drawerName() + ' is choosing a word';
     $('chooseSub').textContent = 'Get ready to guess.';
     $('chooseList').innerHTML = '';
     $('ovChoose').classList.remove('hide');

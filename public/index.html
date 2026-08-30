@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>fafscribbl - draw and guess FAF units</title>
-<meta name="description" content="Draw and guess Supreme Commander: Forged Alliance Forever units. No login, just a name.">
+<title>fafscribbl - draw and guess FAF related words</title>
+<meta name="description" content="Draw and guess Supreme Commander: Forged Alliance Forever units, maps and anything else FAF related. No login, just a name.">
 <link rel="icon" href="/favicon.svg">
 <link rel="stylesheet" href="/style.css">
 </head>
@@ -27,7 +27,7 @@
   <div class="home-card" id="homeCard">
     <div class="card">
       <h1 class="logo">faf<span>scribbl</span></h1>
-      <p class="tagline">One player draws a Forged Alliance unit, everyone else guesses it in the chat. No FAF login, just pick a name.</p>
+      <p class="tagline">One player draws something FAF related, a unit, a map, whatever is in the list, and everyone else guesses it in the chat. No FAF login, just pick a name.</p>
 
       <div class="field">
         <label for="nameInput">Your name</label>
@@ -177,9 +177,9 @@
             </select>
           </div>
           <div>
-            <label for="setPreviews">Unit pictures</label>
+            <label for="setPreviews">Reference pictures</label>
             <select id="setPreviews">
-              <option value="1">On, the drawer can look at the unit</option>
+              <option value="1">On, the drawer can look at the picture</option>
               <option value="0">Off, no pictures anywhere</option>
             </select>
           </div>
@@ -233,7 +233,7 @@
         <!-- word choice -->
         <div class="ov hide" id="ovChoose">
           <div class="ovbox">
-            <h2 id="chooseTitle">Choose a unit to draw</h2>
+            <h2 id="chooseTitle">Choose a word to draw</h2>
             <p class="muted" id="chooseSub"></p>
             <div class="choices" id="chooseList"></div>
           </div>
@@ -263,7 +263,7 @@
           <button class="small ghost" id="refBigger" title="Bigger">+</button>
           <button class="small ghost" id="refClose" title="Hide">&#10005;</button>
         </div>
-        <img id="refImg" alt="unit reference" draggable="false">
+        <img id="refImg" alt="reference picture" draggable="false">
       </div>
 
       <div id="tools" class="hide">

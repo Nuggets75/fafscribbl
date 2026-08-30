@@ -1,8 +1,9 @@
 # fafscribbl
 
-Draw and guess Supreme Commander: Forged Alliance Forever units. One player draws, everyone
-else types guesses in the chat. Skribbl-style, but the whole word list is FAF units and
-buildings.
+Draw and guess Forged Alliance Forever. One player draws, everyone else types guesses in the
+chat. Skribbl-style, but the whole word list is FAF related: units, buildings, maps, and whatever
+else you add to it. The interface calls them **words**, not units, because the list stopped being
+units only a long time ago.
 
 No FAF login and no accounts: players type a name and join a lobby by link or 5-letter code.
 
@@ -45,7 +46,7 @@ The container clones the repo and runs `server.js` directly, the same way faf-to
 | Word choices | 1 (assigned, no picking) to 5 | 3 |
 | Letter hints | off, or a minimum of 1-5 letters | 2 |
 | Unit look-up | on / off | on |
-| Unit pictures | on / off | on |
+| Reference pictures | on / off | on |
 | Visibility | private / public | private |
 | Word pool filters | one chip row per admin-defined tag group | nothing, tags are opt in |
 | Extra words | free text, optionally used on their own | empty |
@@ -154,22 +155,22 @@ browser and a 390px screen cannot afford somebody's 160%.
   80% by default and adjustable from 40% to 100% in the display settings. It is measured against
   the live size of its container, with a `ResizeObserver` behind it, so it can never grow over
   the toolbar when the toolbar appears.
-- **The drawer can look at the unit.** Every unit word carries the in-game build icon, shown
+- **The drawer can look at the picture.** Every unit word carries the in-game build icon, shown
   under each option on the pick screen and available while drawing behind a
   **What does this look like** button in the toolbar. The picture is **hidden until that button
   is pressed**, and every turn starts hidden again, so seeing it is always a deliberate act. The
-  button only appears when that particular unit actually has a picture, and only the drawer ever
-  gets it. The panel parks itself in the empty gutter beside the board when there is one, and can
+  button only appears when that particular word actually has a picture, and only people who are
+  allowed to know the word get it. The panel parks itself in the empty gutter beside the board when there is one, and can
   be dragged, resized and closed. Only its title bar takes pointer events, so you can draw
   straight through the picture if it is over the board. The picture also appears on the reveal
-  screen once the word is out. The **Unit pictures** lobby setting turns the whole thing off, and
+  screen once the word is out. The **Reference pictures** lobby setting turns the whole thing off, and
   then no icon is sent to anybody.
 - Anyone who joins mid-turn gets the full drawing replayed instantly.
 - Only the current drawer can draw. The server enforces it, the toolbar is simply hidden for
   everybody else.
 - Works with mouse, pen and touch.
 
-### Unit pictures
+### Reference pictures
 
 506 unit icons from the [etfreeman unit database](https://faforever.github.io/etfreeman-db/#/)
 ship with the repo, bundled into `data/icons.bundle.json` so the whole set uploads as one file.
