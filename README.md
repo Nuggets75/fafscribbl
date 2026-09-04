@@ -215,7 +215,14 @@ time. The strokes replay over the first ten seconds exactly as they were drawn.
   and never more than 60% of the word.
 - Between drawings the answer and its picture are shown. That pause is free: the next clock does
   not start until the browser asks for the next drawing.
-- Giving up still banks what has been scored so far.
+- **Skip** takes a zero on the drawing in front of you, shows you what it was, and moves straight
+  on to the next one. It is for when you have no idea and do not want to sit out the clock. The
+  recap marks those as skipped rather than missed.
+- **Give up** ends the run and banks what has been scored so far.
+- The **unit look-up** is there too, behind a Look up button in the header rather than pinned
+  open, since the page is one centred column. Same search, same server side rules, over
+  `POST /api/solo/lookup` instead of the socket. It needs a live run, so it is not an open
+  word-list endpoint, and it is rate limited per run.
 - The global highscore keeps the top 50 runs, and shows the top 20.
 
 **The answers never leave the server.** The browser is sent the strokes and a letter mask, and
@@ -223,6 +230,9 @@ every guess is checked server side, so the score is worth something. Run starts 
 per IP.
 
 ### The unit look-up
+
+Available in a lobby and in the single player challenge. The search itself lives in
+`Store.lookup()` so both behave identically.
 
 A search box sits at the bottom of the left column, always visible, no button to press. Type a description
 in any order, "aeon t1 scout" or "scout t1 aeon", and it lists the units whose admin note and tags
@@ -435,6 +445,9 @@ intent, nothing more.
 
 ### WebSocket protocol
 
+The single player challenge talks over HTTP instead: `/api/solo/start`, `/guess`, `/timeup`,
+`/next`, `/hint`, `/skip`, `/lookup`, `/finish` and the public `/highscores`.
+
 Client to server: `hello`, `chat`, `draw`, `begin`, `undo`, `clearCanvas`, `pick`, `start`,
 `settings`, `kick`, `skip`, `pause`, `lobby`, `lookup`, `sync`, `ping`.
 
@@ -469,8 +482,9 @@ custom words, self-closing lobbies, the editable filter groups, the pool counter
 contain spaces, opt-in filtering, icon matching and uploads, the unit look-up and its map
 exclusion, hint scaling, the picture toggle, the saved drawing store and its cap, and the whole
 single player run from start to highscore, including that the answer is never sent to the
-browser and that a finished run cannot be banked twice, the host pause down to the second the
-clock is handed back, and the host role moving when the host leaves. 256 assertions.
+browser and that a finished run cannot be banked twice, skipping a drawing, the challenge look-up
+and its rate limit, the host pause down to the second the clock is handed back, and the host role
+moving when the host leaves. 277 assertions.
 
 The browser suites additionally drive a real iPhone viewport: the layout, the look-up sheet,
 drawing with a finger, and that a 1500px desktop is left exactly as it was.

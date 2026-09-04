@@ -347,6 +347,17 @@ main{flex:1;display:grid;gap:10px;padding:10px;min-height:0;
 .recap{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
 .recap div{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
 .recap div.got{border-color:var(--good)}
+/* On the challenge page the look-up sits behind the magnifier in the header rather than being
+   pinned open like it is in a lobby: the page is one centred column, so a panel parked in the
+   corner would sooner or later sit on top of the guess box. Open, it is the same corner panel;
+   the phone block further down turns it into a bottom sheet. */
+#solo #lkBtn,#solo #lkClose{display:inline-block}
+/* Labelled on a desktop, where there is room for words, and a magnifier on a phone. */
+#solo #lkBtn .lkicon{display:none}
+#solo #lookup{position:fixed;left:14px;bottom:14px;width:300px;z-index:30;margin:0;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;
+  flex-direction:column;gap:6px;box-shadow:0 10px 30px #0008;display:none}
+body.lkopen #solo #lookup{display:flex}
 .recap b{display:block;font-size:14px}
 /* keep the guess row and the mask on the same axis as the board */
 .sologuess,.solomask,.soloverdict,.soloprog{max-width:840px;margin-left:auto;margin-right:auto}
@@ -427,6 +438,12 @@ body.ispaused #board{cursor:not-allowed}
     padding:10px 10px calc(10px + env(safe-area-inset-bottom));margin:0;
     box-shadow:0 -10px 30px #000a;max-height:66vh;display:none}
   body.lkopen #lookup{display:flex;flex-direction:column}
+  #solo #lkBtn .lklabel{display:none}
+  #solo #lkBtn .lkicon{display:inline}
+  /* the challenge page uses the same bottom sheet as the lobby does */
+  #solo #lookup{left:0;right:0;bottom:0;top:auto;width:auto;
+    border-radius:14px 14px 0 0;border:0;border-top:1px solid var(--line);
+    padding:10px 10px calc(10px + env(safe-area-inset-bottom));max-height:66vh}
   #lkInput{font-size:16px}
   #lkResults{height:auto;flex:1 1 auto;max-height:48vh}
 
@@ -446,14 +463,14 @@ body.ispaused #board{cursor:not-allowed}
 
   /* the single player page */
   #solo{padding:10px}
-  .solohead{gap:8px;margin-bottom:10px}
-  .solohead .brand{display:block;font-size:20px}
-  .solohead .hint{font-size:11px}
-  .soloscore{gap:10px}
-  .soloscore b{font-size:18px}
-  .soloscore .lab{font-size:9px;letter-spacing:.5px}
-  #soloClock{font-size:26px;min-width:44px}
-  #quitBtn{white-space:nowrap}
+  .solohead{gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  .solohead .brand{display:block;font-size:17px}
+  .solohead .hint{display:none}          /* "Single player challenge" is the page you are on */
+  .soloscore{gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .soloscore b{font-size:16px}
+  .soloscore .lab{font-size:9px;letter-spacing:.4px}
+  #soloClock{font-size:23px;min-width:34px}
+  #solo .solohead button{font-size:11px;padding:4px 7px;white-space:nowrap}
   .solomask{font-size:22px;letter-spacing:5px;margin:10px 0 0;min-height:30px}
   .sologuess{margin-top:8px}
   #guessInput{font-size:16px}

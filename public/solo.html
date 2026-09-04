@@ -18,7 +18,9 @@
         <div><span class="lab">Drawing</span><b id="hudRound">1/10</b></div>
         <div><span class="lab">Score</span><b id="hudScore">0</b></div>
         <div id="soloClock">40</div>
-        <button class="small ghost" id="quitBtn">Give up</button>
+        <button class="small ghost" id="lkBtn" title="Unit look-up"><span class="lklabel">Look up</span><span class="lkicon">&#128269;</span></button>
+        <button class="small ghost" id="skipBtn" title="No idea, show me the answer and move on">Skip</button>
+        <button class="small ghost" id="quitBtn" title="End the run and keep the points so far">Give up</button>
       </div>
       <div id="headRight"><a href="/" class="hint">Back to the lobbies</a></div>
     </div>
@@ -88,6 +90,13 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- the same unit look-up the lobby has -->
+  <div id="lookup" class="hide">
+    <div class="lkhead">Unit look-up<button class="small ghost" id="lkClose">&#10005;</button></div>
+    <input id="lkInput" placeholder="aeon t1 scout" autocomplete="off" maxlength="60">
+    <div id="lkResults"><p class="lkhint">Describe a unit and this finds its name. Order does not matter.</p></div>
   </div>
 </div>
 <div class="toastwrap" id="toasts"></div>

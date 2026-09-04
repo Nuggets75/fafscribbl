@@ -140,6 +140,7 @@
     });
     $('hud').classList.toggle('hide', which !== 'soloPlay');
     $('headRight').classList.toggle('hide', which === 'soloPlay');
+    showLookupPanel(which === 'soloPlay');
   }
 
   function renderProg() {
@@ -161,6 +162,7 @@
     $('verdict').className = 'soloverdict';
     $('guessInput').value = '';
     $('guessInput').disabled = false;
+    $('skipBtn').disabled = false;
     $('flash').classList.add('hide');
     marks[r.index - 1] = 'now';
     renderProg();
@@ -227,9 +229,10 @@
     marks[(run ? run.index : 1) - 1] = got ? 'got' : 'miss';
     renderProg();
     $('guessInput').disabled = true;
+    $('skipBtn').disabled = true;
     $('hudScore').textContent = r.total !== undefined ? r.total : $('hudScore').textContent;
     $('flashWord').textContent = r.word || '';
-    $('flashPts').textContent = got ? '+' + r.points + ' points' : 'No points';
+    $('flashPts').textContent = got ? '+' + r.points + ' points' : (r.skipped ? 'Skipped, no points' : 'No points');
     $('flashPts').className = 'pts' + (got ? '' : ' zero');
     var img = $('flashIcon');
     if (r.icon) { img.src = '/icons/' + r.icon; img.classList.remove('hide'); }
@@ -254,12 +257,77 @@
       $('finalRank').textContent = r.rank ? '  -  rank #' + r.rank + ' on the global board' : '';
       $('recap').innerHTML = (r.results || []).map(function (x) {
         return '<div class="' + (x.got ? 'got' : '') + '"><b>' + esc(x.word) + '</b>' +
-          (x.got ? '+' + x.points : 'missed') + '</div>';
+          (x.got ? '+' + x.points : (x.skipped ? 'skipped' : 'missed')) + '</div>';
       }).join('');
       fillScores($('hsBody2'), r.best, r.rank);
       show('soloDone');
     });
   }
+
+  /* ------------------------------------------------------ unit look-up */
+  // The same aid the lobby gives you. The server searches notes and tags only, so this can
+  // never hand back the answer to the drawing on screen.
+  var lkTimer = null;
+  // The look-up only exists while a run is on: there is nothing to look up on the start
+  // screen or the scoreboard.
+  function showLookupPanel(on) {
+    $('lookup').classList.toggle('hide', !on);
+    $('lkBtn').classList.toggle('hide', !on);
+    if (!on) document.body.classList.remove('lkopen');
+  }
+  function openLookup(on) {
+    document.body.classList.toggle('lkopen', !!on);
+    if (on) { try { $('lkInput').focus(); } catch (e) { /* ignore */ } }
+  }
+  $('lkBtn').onclick = function () { openLookup(!document.body.classList.contains('lkopen')); };
+  $('lkClose').onclick = function () { openLookup(false); };
+  function runLookup() {
+    var q = $('lkInput').value.trim();
+    var box = $('lkResults');
+    if (!q) {
+      box.innerHTML = '<p class="lkhint">Describe a unit and this finds its name. Order does not matter.</p>';
+      return;
+    }
+    if (!sid) return;
+    post('/api/solo/lookup', { sid: sid, q: q }).then(function (r) {
+      if (r.busy) return;
+      if ($('lkInput').value.trim() !== r.q) return;
+      if (!r.results || !r.results.length) {
+        box.innerHTML = '<p class="lkhint">Nothing matches all of those words.</p>';
+        return;
+      }
+      box.innerHTML = '';
+      r.results.forEach(function (x) {
+        var row = document.createElement('div');
+        row.className = 'lkrow';
+        if (x.icon) {
+          var im = document.createElement('img');
+          im.src = '/icons/' + x.icon;
+          im.alt = '';
+          row.appendChild(im);
+        }
+        var t = document.createElement('div');
+        t.className = 't';
+        var n = document.createElement('div');
+        n.className = 'n';
+        n.textContent = x.word;
+        var h = document.createElement('div');
+        h.className = 'h';
+        h.textContent = x.hint || '';
+        t.appendChild(n); t.appendChild(h);
+        row.appendChild(t);
+        box.appendChild(row);
+      });
+    }).catch(function () { /* ignore */ });
+  }
+  $('lkInput').addEventListener('input', function () {
+    clearTimeout(lkTimer);
+    lkTimer = setTimeout(runLookup, 180);
+  });
+  $('lkInput').addEventListener('keydown', function (e) {
+    e.stopPropagation();
+    if (e.key === 'Enter') { e.preventDefault(); clearTimeout(lkTimer); runLookup(); }
+  });
 
   /* ---------------------------------------------------------- highscore */
   function fillScores(tb, best, mine) {
@@ -324,6 +392,16 @@
     });
   };
 
+  // No idea on this one: take the zero, see what it was, get on with the next drawing.
+  $('skipBtn').onclick = function () {
+    if (!sid || !run || busy) return;
+    busy = true;
+    stopRound();
+    post('/api/solo/skip', { sid: sid }).then(function (r) {
+      if (r.error) { busy = false; toast(r.error); return; }
+      afterRound(r, false);
+    }).catch(function () { busy = false; });
+  };
   $('quitBtn').onclick = function () {
     if (!sid) return;
     stopRound();
@@ -337,6 +415,7 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && $('soloStart').classList.contains('hide') === false) $('startBtn').click();
   });
+  showLookupPanel(false);
 
   clearBoard();
   renderProg();

@@ -221,10 +221,20 @@ const server = http.createServer((req, res) => {
       if (!s) return sendJSON(res, 404, { error: 'That run has expired, start a new one' });
       if (p === '/api/solo/guess') return sendJSON(res, 200, solo.guess(s, b.guess));
       if (p === '/api/solo/timeup') return sendJSON(res, 200, solo.timeUp(s));
+      if (p === '/api/solo/skip') return sendJSON(res, 200, solo.skip(s));
       // The next drawing's clock only starts when the browser asks for it, so the
       // few seconds of "that was a Cybran Mantis" between rounds are not on the player.
       if (p === '/api/solo/next') return sendJSON(res, 200, solo.round(s));
       if (p === '/api/solo/hint') return sendJSON(res, 200, solo.hint(s));
+      // The same unit look-up the lobby has. It searches notes and tags only and never the
+      // word list wholesale, so it cannot be used to pull the run's answers out of the server.
+      if (p === '/api/solo/lookup') {
+        const t = Date.now();
+        s.lkStamps = (s.lkStamps || []).filter((x) => t - x < 4000);
+        if (s.lkStamps.length >= 15) return sendJSON(res, 200, { q: '', results: [], busy: true });
+        s.lkStamps.push(t);
+        return sendJSON(res, 200, store.lookup(b.q));
+      }
       if (p === '/api/solo/finish') return sendJSON(res, 200, solo.finish(s, b.name));
       return sendJSON(res, 404, { error: 'Unknown endpoint' });
     });

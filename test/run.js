@@ -1052,6 +1052,48 @@ async function soloTests() {
   const hs2 = await api('/api/solo/highscores');
   eq(hs2.body.best.filter((b) => b.name === 'Tester').length, 1, 'and only enters the board once');
 
+  // skipping one drawing: no points, the answer comes back, the run carries on
+  const run3 = await api('/api/solo/start', { method: 'POST', body: JSON.stringify({ name: 'Skipper' }) });
+  const sid3 = run3.body.sid;
+  const sk = await api('/api/solo/skip', { method: 'POST', body: JSON.stringify({ sid: sid3 }) });
+  eq(sk.status, 200, 'a drawing can be skipped');
+  eq(sk.body.result, 'over', 'the round ends');
+  eq(sk.body.points, 0, 'for no points');
+  eq(sk.body.skipped, true, 'and it is marked as skipped rather than timed out');
+  ok(!!sk.body.word, 'the answer is shown once it is over: ' + sk.body.word);
+  const sk2 = await api('/api/solo/skip', { method: 'POST', body: JSON.stringify({ sid: sid3 }) });
+  eq(sk2.body.result, 'over', 'skipping twice in a row does nothing extra');
+  const nx3 = await api('/api/solo/next', { method: 'POST', body: JSON.stringify({ sid: sid3 }) });
+  eq(nx3.body.index, 2, 'and the next drawing follows on');
+  const fin3 = await api('/api/solo/finish', { method: 'POST', body: JSON.stringify({ sid: sid3, name: 'Skipper' }) });
+  eq(fin3.body.score, 0, 'a skipped drawing scores nothing');
+  eq(fin3.body.results.length, 1, 'and leaves one line in the recap');
+  eq(fin3.body.results[0].skipped, true, 'marked skipped there too');
+  eq(fin3.body.rank, null, 'a run worth nothing does not go on the board');
+
+  // the look-up, over HTTP this time, behaving exactly as it does in a lobby
+  const run2 = await api('/api/solo/start', { method: 'POST', body: JSON.stringify({ name: 'Looker' }) });
+  const sid2 = run2.body.sid;
+  const lk = await api('/api/solo/lookup', { method: 'POST', body: JSON.stringify({ sid: sid2, q: 'uef land' }) });
+  eq(lk.status, 200, 'the challenge has a look-up too');
+  ok(lk.body.results.length > 0, 'and it finds things: ' + lk.body.results.map((r) => r.word).slice(0, 3).join(', '));
+  ok(lk.body.results.every((r) => r.word && typeof r.hint === 'string'), 'each hit carries its note');
+  ok(lk.body.results.length <= 14, 'never more than fourteen at a time');
+  const lkOrder = await api('/api/solo/lookup', { method: 'POST', body: JSON.stringify({ sid: sid2, q: 'land uef' }) });
+  eq(JSON.stringify(lkOrder.body.results), JSON.stringify(lk.body.results), 'word order does not matter');
+  const lkMap = await api('/api/solo/lookup', { method: 'POST', body: JSON.stringify({ sid: sid2, q: 'map' }) });
+  eq(lkMap.body.results.length, 0, 'and maps are excluded here as well');
+  const lkEmpty = await api('/api/solo/lookup', { method: 'POST', body: JSON.stringify({ sid: sid2, q: '  ' }) });
+  eq(lkEmpty.body.results.length, 0, 'an empty query returns nothing rather than the whole list');
+  const lkNoSid = await api('/api/solo/lookup', { method: 'POST', body: JSON.stringify({ sid: 'nope', q: 'uef' }) });
+  eq(lkNoSid.status, 404, 'and it needs a live run, so it is not an open word list endpoint');
+  let throttled = false;
+  for (let i = 0; i < 20; i++) {
+    const r = await api('/api/solo/lookup', { method: 'POST', body: JSON.stringify({ sid: sid2, q: 'uef' }) });
+    if (r.body.busy) { throttled = true; break; }
+  }
+  ok(throttled, 'hammering it gets rate limited');
+
   const hsClear = await api('/api/admin/highscores/clear', { method: 'POST' }, adminToken);
   eq(hsClear.status, 200, 'admin can wipe the highscore board');
   const hs3 = await api('/api/solo/highscores');
