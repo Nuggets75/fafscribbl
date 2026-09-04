@@ -463,14 +463,14 @@ body.ispaused #board{cursor:not-allowed}
 
   /* the single player page */
   #solo{padding:10px}
-  .solohead{gap:8px;margin-bottom:10px}
-  .solohead .brand{display:block;font-size:20px}
-  .solohead .hint{font-size:11px}
-  .soloscore{gap:10px}
-  .soloscore b{font-size:18px}
-  .soloscore .lab{font-size:9px;letter-spacing:.5px}
-  #soloClock{font-size:26px;min-width:44px}
-  #quitBtn{white-space:nowrap}
+  .solohead{gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  .solohead .brand{display:block;font-size:17px}
+  .solohead .hint{display:none}          /* "Single player challenge" is the page you are on */
+  .soloscore{gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .soloscore b{font-size:16px}
+  .soloscore .lab{font-size:9px;letter-spacing:.4px}
+  #soloClock{font-size:23px;min-width:34px}
+  #solo .solohead button{font-size:11px;padding:4px 7px;white-space:nowrap}
   .solomask{font-size:22px;letter-spacing:5px;margin:10px 0 0;min-height:30px}
   .sologuess{margin-top:8px}
   #guessInput{font-size:16px}
