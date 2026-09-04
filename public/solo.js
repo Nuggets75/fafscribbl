@@ -162,7 +162,6 @@
     $('verdict').className = 'soloverdict';
     $('guessInput').value = '';
     $('guessInput').disabled = false;
-    $('skipBtn').disabled = false;
     $('flash').classList.add('hide');
     marks[r.index - 1] = 'now';
     renderProg();
@@ -229,10 +228,9 @@
     marks[(run ? run.index : 1) - 1] = got ? 'got' : 'miss';
     renderProg();
     $('guessInput').disabled = true;
-    $('skipBtn').disabled = true;
     $('hudScore').textContent = r.total !== undefined ? r.total : $('hudScore').textContent;
     $('flashWord').textContent = r.word || '';
-    $('flashPts').textContent = got ? '+' + r.points + ' points' : (r.skipped ? 'Skipped, no points' : 'No points');
+    $('flashPts').textContent = got ? '+' + r.points + ' points' : 'No points';
     $('flashPts').className = 'pts' + (got ? '' : ' zero');
     var img = $('flashIcon');
     if (r.icon) { img.src = '/icons/' + r.icon; img.classList.remove('hide'); }
@@ -257,7 +255,7 @@
       $('finalRank').textContent = r.rank ? '  -  rank #' + r.rank + ' on the global board' : '';
       $('recap').innerHTML = (r.results || []).map(function (x) {
         return '<div class="' + (x.got ? 'got' : '') + '"><b>' + esc(x.word) + '</b>' +
-          (x.got ? '+' + x.points : (x.skipped ? 'skipped' : 'missed')) + '</div>';
+          (x.got ? '+' + x.points : 'missed') + '</div>';
       }).join('');
       fillScores($('hsBody2'), r.best, r.rank);
       show('soloDone');
@@ -392,16 +390,6 @@
     });
   };
 
-  // No idea on this one: take the zero, see what it was, get on with the next drawing.
-  $('skipBtn').onclick = function () {
-    if (!sid || !run || busy) return;
-    busy = true;
-    stopRound();
-    post('/api/solo/skip', { sid: sid }).then(function (r) {
-      if (r.error) { busy = false; toast(r.error); return; }
-      afterRound(r, false);
-    }).catch(function () { busy = false; });
-  };
   $('quitBtn').onclick = function () {
     if (!sid) return;
     stopRound();

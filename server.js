@@ -221,7 +221,6 @@ const server = http.createServer((req, res) => {
       if (!s) return sendJSON(res, 404, { error: 'That run has expired, start a new one' });
       if (p === '/api/solo/guess') return sendJSON(res, 200, solo.guess(s, b.guess));
       if (p === '/api/solo/timeup') return sendJSON(res, 200, solo.timeUp(s));
-      if (p === '/api/solo/skip') return sendJSON(res, 200, solo.skip(s));
       // The next drawing's clock only starts when the browser asks for it, so the
       // few seconds of "that was a Cybran Mantis" between rounds are not on the player.
       if (p === '/api/solo/next') return sendJSON(res, 200, solo.round(s));
